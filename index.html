@@ -519,7 +519,7 @@ giornaliera:[
     {id:"g-s1",testo:"DPI indossati correttamente da tutti gli operai",sub:"Elmetto, scarpe, guanti, imbracatura dove previsto"},
     {id:"g-s2",testo:"Recinzione e segnaletica cantiere integra"},
     {id:"g-s3",testo:"Protezioni collettive verificate (parapetti, reti, puntelli)"},
-    {id:"g-s4",testo:"Nessun pericolo grave e immediato rilevato",sub:"Se sì → sospendere i lavori e documentare"},
+    {id:"g-s4",testo:"Nessun pericolo grave e immediato rilevato",sub:"Se sì: sospendere i lavori e documentare"},
     {id:"g-s5",testo:"Estintori e cassetta pronto soccorso accessibili"},
     {id:"g-s6",testo:"Viabilità interna cantiere libera e sicura"}
   ]},
@@ -614,7 +614,7 @@ quindicinale:[
 mensile:[
   {id:"m-evm",titolo:"Controllo costi (EVM)",icona:"euro",colore:"t-purple",voci:[
     {id:"m-e1",testo:"Costi consuntivi del mese registrati e confrontati con il budget"},
-    {id:"m-e2",testo:"Avanzamento fisico % vs avanzamento economico % confrontati",sub:"Se divergono significativamente → analisi cause"},
+    {id:"m-e2",testo:"Avanzamento fisico % vs avanzamento economico % confrontati",sub:"Se divergono significativamente: analisi cause"},
     {id:"m-e3",testo:"Previsione costo a finire (EAC) aggiornata"},
     {id:"m-e4",testo:"Contingency residua verificata — sufficiente per i rischi aperti"},
     {id:"m-e5",testo:"Posizione finanziaria subappaltatori analizzata",sub:"Nessuno in difficoltà che possa bloccare i lavori"}
@@ -1175,7 +1175,7 @@ function genReport(){
     const pr=prPdf(gv('g-cantiere'),data||prToday());
     meta.push(...pr.meta);
     sections=[...pr.sections,...sections];
-    footnote="Registro presenze tenuto ai fini di sicurezza e gestione del cantiere (D.Lgs. 81/2008 artt. 18 e 26; L. 136/2010 art. 5). Dati personali trattati ai sensi del Reg. UE 2016/679. Il sigillo SHA-256 attesta l'integrità del registro al momento della chiusura della giornata; non sostituisce la firma elettronica qualificata e la marca temporale.";
+    if(pr.has)footnote="Registro presenze tenuto ai fini di sicurezza e gestione del cantiere (D.Lgs. 81/2008 artt. 18 e 26; L. 136/2010 art. 5). Dati personali trattati ai sensi del Reg. UE 2016/679. Il sigillo SHA-256 attesta l'integrità del registro al momento della chiusura della giornata; non sostituisce la firma elettronica qualificata e la marca temporale.";
     const noteSec=getSecNote('g-note');
     if(noteSec)sections.push({title:'Note del giorno',score:null,items:[{label:noteSec,value:'',note:''}]});
   }else{
@@ -1200,7 +1200,7 @@ function genReport(){
     subtitle:cant,
     meta,
     sections,
-    actions:[],
+    actions:null,
     photos:photos[cadKey]||[],
     footnote,
     filenamePrefix:`${now.toISOString().slice(0,10)}_${tm[currentRepType]}_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`
@@ -1215,26 +1215,39 @@ function setDriveStatus(state,text){
 }
 
 // ── PDF BUILDER (jsPDF) ───────────────────────────────────────────────────────
+// I font standard del PDF (Helvetica) non contengono simboli come ✓ ⚠ → ≥ né emoji:
+// vengono convertiti in testo equivalente per evitare caratteri errati.
+function pdfSafe(s){
+  if(Array.isArray(s))return s.map(pdfSafe);
+  return String(s==null?'':s)
+    .replace(/[→⇒➔➜]/g,'>').replace(/≥/g,'>=').replace(/≤/g,'<=')
+    .replace(/[✓✔]/g,'OK').replace(/[✕✗✘]/g,'X').replace(/⚠️?/g,'!')
+    .replace(/ /g,' ')
+    .replace(/[^\n -~¡-ÿ€‘’“”•–—…]/g,'');
+}
+
 function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePrefix,footnote}){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
-  const PW=210,PH=297,MX=16;
-  let y=20;
+  const _text=doc.text.bind(doc),_split=doc.splitTextToSize.bind(doc);
+  doc.text=(t,...a)=>_text(pdfSafe(t),...a);
+  doc.splitTextToSize=(t,...a)=>_split(pdfSafe(t),...a);
 
-  function checkPage(need){
-    if(y+need>PH-18){doc.addPage();y=20;}
-  }
-  function header(text,size=14,color=[0,0,0]){
-    checkPage(10);
+  const PW=210,PH=297,MX=16,TOP=20,BOT=PH-20,CW=PW-MX*2;
+  const BLUE=[0,80,180];
+  let y=TOP;
+
+  const checkPage=need=>{if(y+need>BOT){doc.addPage();y=TOP;return true;}return false;};
+  function header(text,size=12,color=BLUE){
     doc.setFont('helvetica','bold');doc.setFontSize(size);doc.setTextColor(...color);
-    doc.text(text,MX,y);y+=size*0.45+2;
+    doc.text(text,MX,y);y+=size*0.45+2.5;
   }
   function line(){doc.setDrawColor(220,220,220);doc.setLineWidth(.2);doc.line(MX,y,PW-MX,y);y+=4;}
   function bodyText(text,size=10,color=[60,60,60],bold=false){
     doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...color);
-    const lines=doc.splitTextToSize(text,PW-MX*2);
-    lines.forEach(l=>{checkPage(size*0.45+1);doc.text(l,MX,y);y+=size*0.45+1;});
+    doc.splitTextToSize(text,CW).forEach(l=>{checkPage(size*0.45+1);doc.text(l,MX,y);y+=size*0.45+1;});
   }
+  const fmtDate=v=>String(v).replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1');
 
   // Tabella a colonne fisse (usata dal registro presenze)
   function drawTable(t){
@@ -1245,12 +1258,12 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
       let x=MX;t.head.forEach((h,i)=>{doc.text(h,x+1.2,y+4.1);x+=t.widths[i];});
       y+=6;
     };
-    checkPage(16);head();
+    head();
     t.rows.forEach(row=>{
       doc.setFont('helvetica','normal');doc.setFontSize(FS);
       const cells=row.map((c,i)=>doc.splitTextToSize(String(c==null?'':c),t.widths[i]-2.4));
       const rowH=Math.max(...cells.map(c=>c.length))*LH+2.4;
-      if(y+rowH>PH-18){doc.addPage();y=20;head();}
+      if(y+rowH>BOT){doc.addPage();y=TOP;head();}
       let x=MX;
       cells.forEach((lines,i)=>{
         const v=String(row[i]);
@@ -1262,108 +1275,133 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
       y+=rowH;
       doc.setDrawColor(225,225,225);doc.setLineWidth(.15);doc.line(MX,y,MX+total,y);
     });
-    y+=3;
+    y+=5;
   }
 
-  // Cover
+  // Stato delle voci di check-list: testo colorato al posto dei simboli
+  const STAT={'✓':['OK',[40,160,80]],'OK':['OK',[40,160,80]],'⚠':['ATTENZIONE',[200,130,0]],'✕':['NON OK',[210,50,40]],'N/A':['N/A',[130,130,130]]};
+
+  // Copertina
   doc.setFillColor(0,122,255);
   doc.rect(0,0,PW,38,'F');
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);
-  doc.text(title,MX,20);
+  doc.text(title,MX,19);
   doc.setFont('helvetica','normal');doc.setFontSize(11);
-  doc.text(subtitle||'',MX,29);
+  doc.splitTextToSize(subtitle||'',CW).slice(0,2).forEach((l,i)=>doc.text(l,MX,28+i*5));
   y=48;
 
-  // Meta table
-  doc.setFontSize(10);
+  // Dati generali
   meta.forEach(([k,v])=>{
-    checkPage(7);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);
+    const valLines=doc.splitTextToSize(fmtDate(v),CW-38);
+    checkPage(Math.max(6,valLines.length*4.6));
     doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
     doc.text(k+':',MX,y);
     doc.setFont('helvetica','normal');doc.setTextColor(20,20,20);
-    const valLines=doc.splitTextToSize(String(v),PW-MX*2-38);
     doc.text(valLines,MX+38,y);
     y+=Math.max(6,valLines.length*4.6);
   });
   y+=3;line();y+=3;
 
-  // Sections
+  // Sezioni
   sections.forEach(sec=>{
-    checkPage(12);
-    header(sec.title+(sec.score?'   '+sec.score:''),12,[0,80,180]);
+    checkPage(sec.table?34:26);   // intestazione mai isolata dal contenuto
+    header(sec.title+(sec.score?'   '+sec.score:''));
     if(sec.table)drawTable(sec.table);
     sec.items.forEach(it=>{
-      checkPage(8);
-      const valColor = it.value==='✓'||it.value==='OK'?[40,160,80] : it.value==='✕'?[210,50,40] : it.value==='⚠'?[200,140,0] : [120,120,120];
+      const st=STAT[it.value];
+      const valTxt=it.value?(st?st[0]:String(it.value)):'';
+      const valCol=st?st[1]:(it.value==='—'?[170,170,170]:[90,90,90]);
+      doc.setFont('helvetica','bold');doc.setFontSize(9);
+      const VW=it.value?doc.getTextWidth(pdfSafe(valTxt))+8:0;
+      doc.setFont('helvetica','normal');doc.setFontSize(10);
+      const lines=doc.splitTextToSize(it.label,CW-5-VW);
+      doc.setFont('helvetica','italic');doc.setFontSize(9);
+      const noteLines=it.note?doc.splitTextToSize(it.note,CW-10):[];
+      checkPage(lines.length*4.6+noteLines.length*4.1+2);   // voce e nota restano insieme
       doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(30,30,30);
-      const labelLines=doc.splitTextToSize('•  '+it.label,PW-MX*2-14);
-      doc.text(labelLines,MX,y);
+      doc.text('•',MX,y);
+      lines.forEach((l,i)=>doc.text(l,MX+4,y+i*4.6));
       if(it.value){
-        doc.setFont('helvetica','bold');doc.setTextColor(...valColor);
-        doc.text(String(it.value),PW-MX-10,y,{align:'right'});
+        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...valCol);
+        doc.text(valTxt,PW-MX,y,{align:'right'});
       }
-      y+=Math.max(5,labelLines.length*4.6);
-      if(it.note){
-        doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(100,100,100);
-        const noteLines=doc.splitTextToSize('   → '+it.note,PW-MX*2-10);
-        noteLines.forEach(l=>{checkPage(5);doc.text(l,MX,y);y+=4.3;});
+      y+=lines.length*4.6;
+      if(noteLines.length){
+        doc.setDrawColor(200,200,206);doc.setLineWidth(.4);
+        doc.line(MX+5,y-2.8,MX+5,y-2.8+noteLines.length*4.1);
+        doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(95,95,95);
+        noteLines.forEach(l=>{doc.text(l,MX+8,y);y+=4.1;});
       }
-      y+=1;
+      y+=1.8;
     });
     y+=3;
   });
 
-  // Corrective actions (sopralluogo only)
+  // Azioni correttive (solo sopralluogo)
   if(actions&&actions.length){
-    checkPage(12);
+    checkPage(26);
     header('Azioni correttive richieste',12,[200,60,40]);
     actions.forEach(a=>{
-      checkPage(10);
-      const col = a.val<=1 ? [210,50,40] : [200,140,0];
+      doc.setFont('helvetica','normal');doc.setFontSize(10);
+      const l2=doc.splitTextToSize(a.voce+'  -  punteggio '+a.val+'/4',CW);
+      doc.setFont('helvetica','italic');doc.setFontSize(9);
+      const nl=a.note?doc.splitTextToSize(a.note,CW-8):[];
+      checkPage(4.6+l2.length*4.6+nl.length*4.1+3);
+      const col=a.val<=1?[210,50,40]:[200,140,0];
       doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...col);
-      doc.text(`${a.val<=1?'✕':'⚠'} [${a.sezione}]`,MX,y);y+=4.6;
+      doc.text((a.val<=1?'NON CONFORME':'ATTENZIONE')+'  ['+a.sezione+']',MX,y);y+=4.6;
       doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
-      const l2=doc.splitTextToSize(a.voce+`  —  punteggio ${a.val}/4`,PW-MX*2);
       doc.text(l2,MX,y);y+=l2.length*4.6;
-      if(a.note){
-        doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(100,100,100);
-        doc.text(doc.splitTextToSize('   → '+a.note,PW-MX*2-10),MX,y);y+=5;
+      if(nl.length){
+        doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(95,95,95);
+        nl.forEach(l=>{doc.text(l,MX+4,y);y+=4.1;});
       }
       y+=2;
     });
     y+=2;
-  } else if(actions){
+  }else if(actions){
+    checkPage(8);
     bodyText('Nessuna azione correttiva urgente rilevata.',10,[80,150,90]);
   }
 
-  if(footnote){checkPage(18);y+=2;line();bodyText(footnote,8,[120,120,120]);}
+  if(footnote){checkPage(22);y+=2;line();bodyText(footnote,8,[120,120,120]);}
 
-  // Photos
+  // Documentazione fotografica: proporzioni originali, senza deformare le immagini
   if(photos&&photos.length){
-    doc.addPage();y=20;
-    header(`Documentazione fotografica  (${photos.length} foto)`,13,[0,80,180]);
-    line();y+=4;
-    const cols=2,gap=6,imgW=(PW-MX*2-gap)/cols,imgH=imgW*0.75;
-    let col=0;
-    photos.forEach((p,idx)=>{
-      if(y+imgH+8>PH-18){doc.addPage();y=20;col=0;}
-      const x=MX+col*(imgW+gap);
-      try{doc.addImage(p.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e){}
-      doc.setFontSize(8);doc.setTextColor(120,120,120);doc.setFont('helvetica','normal');
-      doc.text(`Foto ${idx+1} — ${new Date(p.ts).toLocaleString('it-IT')}`,x,y+imgH+4);
-      col++;
-      if(col>=cols){col=0;y+=imgH+10;}
+    const gap=6,cellW=(CW-gap)/2,maxH=100;
+    const items=photos.map((p,i)=>{
+      let w=cellW,h=cellW*0.75;
+      try{const ip=doc.getImageProperties(p.dataUrl),r=ip.width/ip.height;h=w/r;if(h>maxH){h=maxH;w=h*r;}}catch(e){}
+      return{p,i,w,h};
     });
-    if(col!==0)y+=imgH+10;
+    const rows=[];for(let k=0;k<items.length;k+=2)rows.push(items.slice(k,k+2));
+    const rowH=r=>Math.max(...r.map(x=>x.h));
+    if(y+16+rowH(rows[0])+8>BOT){doc.addPage();y=TOP;}else y+=3;
+    header(`Documentazione fotografica  (${photos.length} foto)`,12);
+    line();
+    rows.forEach(r=>{
+      if(y+rowH(r)+8>BOT){doc.addPage();y=TOP;}
+      r.forEach((x,c)=>{
+        const cx=MX+c*(cellW+gap),ix=cx+(cellW-x.w)/2;
+        try{doc.addImage(x.p.dataUrl,'JPEG',ix,y,x.w,x.h);}catch(e){}
+        doc.setDrawColor(210,210,215);doc.setLineWidth(.2);doc.rect(ix,y,x.w,x.h);
+        const d=new Date(x.p.ts);
+        doc.setFontSize(8);doc.setTextColor(120,120,120);doc.setFont('helvetica','normal');
+        doc.text(`Foto ${x.i+1} - ${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`,cx+cellW/2,y+x.h+4.2,{align:'center'});
+      });
+      y+=rowH(r)+10;
+    });
   }
 
-  // Footer page numbers
+  // Piè di pagina
   const pageCount=doc.internal.getNumberOfPages();
   for(let i=1;i<=pageCount;i++){
     doc.setPage(i);
+    doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-14,PW-MX,PH-14);
     doc.setFontSize(8);doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');
-    doc.text(`Pag. ${i}/${pageCount}`,PW-MX,PH-10,{align:'right'});
-    doc.text('Generato da Site Manager — Omnia Solution',MX,PH-10);
+    doc.text('Generato da Site Manager - Omnia Solution',MX,PH-9.5);
+    doc.text(`Pag. ${i}/${pageCount}`,PW-MX,PH-9.5,{align:'right'});
   }
 
   const blob=doc.output('blob');
@@ -1867,13 +1905,14 @@ function prImport(input){
 function prPdf(cant,data){
   const ck=prKey(cant),d=prDay(ck,data),comp=gv('p-compilatore');
   const meta=[],sections=[];
+  if(!d.act.length)return{meta,sections,has:false};
   const workers=d.act.filter(r=>prTipo(r.tipo).w);
   const tot=d.act.reduce((s,r)=>s+(prNet(r)||0),0);
   const nImp=new Set(d.act.map(r=>prKey(r.impresa))).size;
   meta.push(['Presenze',d.act.length?`${d.act.length} persone (di cui ${workers.length} operai) - ${nImp} imprese/enti - ${prFmtH(tot)} complessive`:'Nessuna presenza registrata']);
   if(comp)meta.push(['Compilato da',comp]);
   if(d.lock){meta.push(['Registro presenze','CHIUSO il '+prFmtTs(d.lock.ts)+' da '+d.lock.by]);meta.push(['Sigillo SHA-256',d.lock.hash]);}
-  else meta.push(['Registro presenze','APERTO - non ancora chiuso/sigillato']);
+  else meta.push(['Registro presenze','Non ancora chiuso']);
 
   const pres={title:'Registro presenze',score:null,items:[]};
   if(d.act.length){
@@ -1905,7 +1944,7 @@ function prPdf(cant,data){
   if(iss.length)iss.forEach(s=>imp.items.push({label:'Da verificare: '+s,value:'',note:''}));
   else if(d.act.length||d.imps.length)imp.items.push({label:'Nessuna anomalia rilevata su tessere e verifiche documentali.',value:'',note:''});
   if(imp.table||imp.items.length)sections.push(imp);
-  return{meta,sections};
+  return{meta,sections,has:true};
 }
 
 window.addEventListener('DOMContentLoaded',init);
