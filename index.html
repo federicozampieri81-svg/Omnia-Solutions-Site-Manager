@@ -1509,6 +1509,7 @@ const PR_KEY='smPresenze', PR_COMP_KEY='smPresenzeComp';
 const PR_TIPI=[
   {v:'mae',l:'Maestranza',w:1,t:1},
   {v:'pre',l:'Preposto / capocantiere',w:1,t:1},
+  {v:'dir',l:'Direttore di cantiere / site manager (non operativo)',w:0,t:1},
   {v:'aut',l:'Lavoratore autonomo',w:1,t:1},
   {v:'for',l:'Fornitore / trasportatore',w:0,t:1},
   {v:'tec',l:'Tecnico / progettista',w:0,t:0},
@@ -1522,7 +1523,7 @@ const IMP_POS=[['ok','Verificato'],['dv','Da verificare'],['ko','Mancante'],['na
 const IMP_DURC=[['ok','Regolare'],['dv','Da verificare'],['ko','Irregolare / scaduto'],['na','Non richiesto']];
 const IMP_PAT=[['ok','Verificata (almeno 15 crediti)'],['dv','Da verificare'],['ko','Mancante / insufficiente'],['na','Esclusa (SOA classe III o sup., forniture)']];
 const IMP_SUB=[['ok','Autorizzato'],['dv','Da autorizzare'],['ko','Non autorizzato'],['na','Non subappaltata']];
-const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto'];
+const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto','Direttore di cantiere','Site manager'];
 const PR_SHORT={ok:'OK',dv:'Da verif.',ko:'NON CONF.',na:'N/A'};
 
 let PR={records:[],imprese:[],locks:{},log:[]}, prEditId=null, impEditId=null, prStoreOk=true;
