@@ -1077,16 +1077,58 @@ function loadSP(){
 }
 
 // ── PHOTOS ────────────────────────────────────────────────────────────────────
+// Data di scatto: EXIF (DateTimeOriginal) > data del file > data di caricamento.
+// Il canvas usato per ridimensionare la foto elimina l'EXIF, quindi si legge dal file originale.
+function exifDate(v){
+  if(v.byteLength<4||v.getUint16(0)!==0xFFD8)return null;            // non è un JPEG
+  let o=2;
+  while(o+4<v.byteLength){
+    if(v.getUint8(o)!==0xFF)return null;
+    const mk=v.getUint8(o+1),len=v.getUint16(o+2);
+    if(mk===0xE1&&v.getUint32(o+4)===0x45786966){                     // segmento "Exif"
+      const t=o+10,le=v.getUint16(t)===0x4949;
+      const u16=q=>v.getUint16(q,le),u32=q=>v.getUint32(q,le);
+      const str=(q,n)=>{let r='';for(let i=0;i<n-1;i++)r+=String.fromCharCode(v.getUint8(q+i));return r;};
+      const tag=(ifd,id)=>{const n=u16(ifd);for(let i=0;i<n;i++){const e=ifd+2+i*12;if(u16(e)===id)return e;}return null;};
+      const val=e=>{const cnt=u32(e+4);return str(cnt>4?t+u32(e+8):e+8,cnt);};
+      const ifd0=t+u32(t+4);
+      let ds=null;
+      const ex=tag(ifd0,0x8769);
+      if(ex){const ei=t+u32(ex+8);for(const id of [0x9003,0x9004]){const e=tag(ei,id);if(e){ds=val(e);if(ds)break;}}}
+      if(!ds){const e=tag(ifd0,0x0132);if(e)ds=val(e);}
+      const m=ds&&ds.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+      if(!m||m[1]==='0000')return null;
+      return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]);
+    }
+    o+=2+len;
+  }
+  return null;
+}
+async function photoDate(file){
+  try{
+    const buf=await file.slice(0,262144).arrayBuffer();
+    const d=exifDate(new DataView(buf));
+    if(d)return{ts:d.toISOString(),src:'exif'};
+  }catch(e){}
+  if(file.lastModified)return{ts:new Date(file.lastModified).toISOString(),src:'file'};
+  return{ts:new Date().toISOString(),src:'upload'};
+}
+
 function addPhotos(cad,input){
   const files=[...input.files];
   if(!files.length)return;
   let pending=files.length;
+  const done=()=>{
+    pending--;
+    if(pending===0){photos[cad].sort((a,b)=>new Date(a.ts)-new Date(b.ts));renderPhotos(cad);savePhotos();}
+  };
   files.forEach(file=>{
+    const when=photoDate(file);
     const reader=new FileReader();
     reader.onload=e=>{
       // Downscale to max 1600px on longest side to keep PDF size reasonable
       const img=new Image();
-      img.onload=()=>{
+      img.onload=async()=>{
         const maxDim=1600;
         let w=img.width,h=img.height;
         if(w>maxDim||h>maxDim){
@@ -1097,12 +1139,14 @@ function addPhotos(cad,input){
         canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
         const dataUrl=canvas.toDataURL('image/jpeg',0.82);
-        photos[cad].push({id:'ph'+Date.now()+Math.random().toString(36).slice(2,7),dataUrl,ts:new Date().toISOString()});
-        pending--;
-        if(pending===0){renderPhotos(cad);savePhotos();}
+        const d=await when;
+        photos[cad].push({id:'ph'+Date.now()+Math.random().toString(36).slice(2,7),dataUrl,ts:d.ts,src:d.src});
+        done();
       };
+      img.onerror=()=>{toast('Formato foto non supportato: usa JPEG o PNG');done();};
       img.src=e.target.result;
     };
+    reader.onerror=()=>done();
     reader.readAsDataURL(file);
   });
   input.value='';
@@ -1388,7 +1432,7 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
         doc.setDrawColor(210,210,215);doc.setLineWidth(.2);doc.rect(ix,y,x.w,x.h);
         const d=new Date(x.p.ts);
         doc.setFontSize(8);doc.setTextColor(120,120,120);doc.setFont('helvetica','normal');
-        doc.text(`Foto ${x.i+1} - ${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`,cx+cellW/2,y+x.h+4.2,{align:'center'});
+        doc.text(`Foto ${x.i+1} - ${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}${x.p.src==='file'?' (data del file)':x.p.src==='upload'?' (data di caricamento)':''}`,cx+cellW/2,y+x.h+4.2,{align:'center'});
       });
       y+=rowH(r)+10;
     });
