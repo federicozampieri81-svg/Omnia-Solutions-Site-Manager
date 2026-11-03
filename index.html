@@ -876,8 +876,9 @@ function showPane(name){
 
 function resetCL(cad){
   const nPh=(photos[cad]||[]).length;
-  if(!confirm('Azzerare questa check-list'+(nPh?' e eliminare le '+nPh+' foto caricate':'')+'?'))return;
+  if(!confirm(cad==='giornaliera'?'Azzerare la giornata? Verranno cancellati check-list, note, lavorazioni, temperatura'+(nPh?(nPh===1?' e la foto caricata':' e le '+nPh+' foto caricate'):'')+'. Cantiere, data e meteo restano.':'Azzerare questa check-list'+(nPh?(nPh===1?' e eliminare la foto caricata':' e eliminare le '+nPh+' foto caricate'):'')+'?'))return;
   photos[cad]=[];renderPhotos(cad);savePhotos();
+  if(cad==='giornaliera')['g-lavorazioni','g-temp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const cont=document.getElementById('sections-'+cad);
   cont.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
   cont.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
