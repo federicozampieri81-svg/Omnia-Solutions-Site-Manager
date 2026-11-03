@@ -875,13 +875,15 @@ function showPane(name){
 }
 
 function resetCL(cad){
-  if(!confirm('Azzerare questa check-list?'))return;
+  const nPh=(photos[cad]||[]).length;
+  if(!confirm('Azzerare questa check-list'+(nPh?' e eliminare le '+nPh+' foto caricate':'')+'?'))return;
+  photos[cad]=[];renderPhotos(cad);savePhotos();
   const cont=document.getElementById('sections-'+cad);
   cont.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
   cont.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
   cont.querySelectorAll('textarea').forEach(t=>t.value='');
   CHECKLISTS[cad].forEach(s=>{if(!s.tipo)updateBadge(s.id);});
-  saveState();toast('Check-list azzerata');
+  saveState();toast(nPh?'Check-list e foto azzerate':'Check-list azzerata');
 }
 
 function saveState(){
@@ -1304,6 +1306,15 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
     };
     head();
     t.rows.forEach(row=>{
+      if(row.group){
+        const gl=doc.splitTextToSize(row.group,total-3);
+        const gh=gl.length*LH+2.6;
+        if(y+gh+9>BOT){doc.addPage();y=TOP;head();}   // il titolo azienda non resta isolato a fondo pagina
+        doc.setFillColor(228,236,250);doc.rect(MX,y,total,gh,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(FS);doc.setTextColor(0,70,160);
+        doc.text(gl,MX+1.5,y+3.5);
+        y+=gh;return;
+      }
       doc.setFont('helvetica','normal');doc.setFontSize(FS);
       const cells=row.map((c,i)=>doc.splitTextToSize(String(c==null?'':c),t.widths[i]-2.4));
       const rowH=Math.max(...cells.map(c=>c.length))*LH+2.4;
@@ -1625,10 +1636,18 @@ function prSyncCtx(){
 
 function prDay(ck,data){
   const all=PR.records.filter(r=>r.ck===ck&&r.data===data);
-  const act=all.filter(r=>!r.ann).sort((a,b)=>(a.ing||'99:99').localeCompare(b.ing||'99:99')||a.nome.localeCompare(b.nome));
+  // Raggruppate per azienda (nell'ordine in cui compaiono); dentro l'azienda per orario di ingresso e poi per inserimento
+  const groups=[],byKey={};
+  all.filter(r=>!r.ann).forEach(r=>{
+    const k=prKey(r.impresa);
+    if(!byKey[k]){byKey[k]={key:k,label:String(r.impresa||'').trim(),list:[]};groups.push(byKey[k]);}
+    byKey[k].list.push(r);
+  });
+  groups.forEach(g=>g.list.sort((a,b)=>(a.ing||'99:99').localeCompare(b.ing||'99:99')));
+  const act=[].concat(...groups.map(g=>g.list));
   const lock=PR.locks[prLk(ck,data)]||null;
   const imps=lock?lock.imp:PR.imprese.filter(i=>i.ck===ck).sort((a,b)=>a.nome.localeCompare(b.nome));
-  return{all,act,ann:all.filter(r=>r.ann),lock,imps};
+  return{all,act,groups,ann:all.filter(r=>r.ann),lock,imps};
 }
 
 // ── verifiche automatiche ─────────────────────────────────────────────────────
@@ -1648,7 +1667,7 @@ function prIssues(d,data){
   const noT=d.act.filter(r=>r.tess==='no');
   if(noT.length)out.push(noT.length+' persona/e senza tessera di riconoscimento esposta ('+noT.map(r=>r.nome).join(', ')+'): art. 26 c.8 D.Lgs. 81/2008.');
   const known=new Set(d.imps.map(i=>prKey(i.nome)));
-  const ext=[...new Set(d.act.filter(r=>prTipo(r.tipo).t).map(r=>r.impresa))].filter(n=>!known.has(prKey(n)));
+  const ext=d.groups.filter(g=>!known.has(g.key)&&g.list.some(r=>prTipo(r.tipo).t)).map(g=>g.label);
   if(ext.length)out.push('Imprese presenti ma non censite nell\'elenco verifiche: '+ext.join(', ')+'.');
   d.imps.forEach(i=>{const f=impFlags(i,data);if(f.length)out.push(i.nome+': '+f.join('; ')+'.');});
   const open=d.act.filter(r=>r.ing&&!r.usc);
@@ -1855,16 +1874,20 @@ function prListHtml(d,c){
   if(!c.cant)return'<div class="hist-empty">Indica il cantiere.</div>';
   if(!d.act.length&&!d.ann.length)return'<div class="hist-empty">Nessuna presenza registrata.</div>';
   const locked=!!d.lock,isToday=c.data===prToday();
-  let h=d.act.map(r=>{
+  const rowHtml=r=>{
     const T=prTipo(r.tipo),net=prNet(r);
     const tess=r.tess==='si'?'<span class="pr-tag ok">Tessera</span>':r.tess==='no'?'<span class="pr-tag bad">Senza tessera</span>':'';
     const orari=r.usc?`${esc(r.ing)} → ${esc(r.usc)}${r.pausa?' · pausa '+r.pausa+' min':''} · <b>${prFmtH(net)}</b>`:`Ingresso ${esc(r.ing)} · <b>${isToday?'in cantiere':'uscita mancante'}</b>`;
     const acts=locked?'':`<div class="pills">${!r.usc&&isToday?`<span class="pill p-ok" onclick="prOut('${r.id}')">Uscita ora</span>`:''}<span class="pill" onclick="prEdit('${r.id}')">Modifica</span><span class="pill p-ko" onclick="prDel('${r.id}')">Annulla</span></div>`;
     return`<div class="row"><div class="row-body">
       <div class="row-title"><b>${esc(r.nome)}</b><span class="pr-tag">${esc(T.l)}</span>${tess}${r.rev&&r.rev.length?'<span class="pr-tag warn">Modificata</span>':''}</div>
-      <div class="row-sub">${esc(r.impresa)}${r.qual?' · '+esc(r.qual):''}</div>
+      ${r.qual?`<div class="row-sub">${esc(r.qual)}</div>`:''}
       <div class="row-sub">${orari}</div>
       ${r.note?`<div class="row-sub">Note: ${esc(r.note)}</div>`:''}${acts}</div></div>`;
+  };
+  let h=d.groups.map(g=>{
+    const tot=g.list.reduce((s,r)=>s+(prNet(r)||0),0),n=g.list.length;
+    return`<div class="row" style="background:var(--fill);padding:9px 14px"><div class="row-body" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><b style="font-size:14px">${esc(g.label)}</b><span class="row-sub" style="margin:0;white-space:nowrap">${n} ${n===1?'persona':'persone'}${tot?' · '+prFmtH(tot):''}</span></div></div>`+g.list.map(rowHtml).join('');
   }).join('');
   h+=d.ann.map(r=>`<div class="row"><div class="row-body"><div class="row-sub" style="text-decoration:line-through">${esc(r.nome)} · ${esc(r.impresa)} · ${esc(r.ing||'')}</div><div class="row-sub">Annullata il ${esc(prFmtTs(r.ann.ts))}${r.ann.by?' da '+esc(r.ann.by):''}</div></div></div>`).join('');
   return h;
@@ -1962,9 +1985,13 @@ function prPdf(cant,data){
   const pres={title:'Registro presenze',score:null,items:[]};
   if(d.act.length){
     pres.table={
-      head:['N.','Nominativo','Impresa / ente','Mansione','Ing.','Usc.','Ore','Tess.'],
-      widths:[8,42,40,36,13,13,12,14],
-      rows:d.act.map((r,i)=>[String(i+1),r.nome,r.impresa,r.qual||prTipo(r.tipo).l,r.ing||'—',r.usc||'—',prFmtH(prNet(r)),{si:'Sì',no:'No',na:'N/A'}[r.tess]])
+      head:['N.','Nominativo','Mansione','Ing.','Usc.','Ore','Tess.'],
+      widths:[8,52,58,15,15,14,16],
+      rows:(()=>{let n=0;const out=[];d.groups.forEach(g=>{
+        const tot=g.list.reduce((s,r)=>s+(prNet(r)||0),0);
+        out.push({group:g.label+'  -  '+g.list.length+(g.list.length===1?' persona':' persone')+(tot?'  -  '+prFmtH(tot):'')});
+        g.list.forEach(r=>out.push([String(++n),r.nome,r.qual||prTipo(r.tipo).l,r.ing||'—',r.usc||'—',prFmtH(prNet(r)),{si:'Sì',no:'No',na:'N/A'}[r.tess]]));
+      });return out;})()
     };
     const byQ={};workers.forEach(r=>{const k=(r.qual||prTipo(r.tipo).l).trim();const kk=k.toLowerCase();byQ[kk]=byQ[kk]||{l:k,n:0};byQ[kk].n++;});
     const qs=Object.values(byQ).sort((a,b)=>b.n-a.n);
