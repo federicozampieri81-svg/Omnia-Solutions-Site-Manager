@@ -302,6 +302,7 @@ input[type=file]{display:none}
     <div class="form-row"><div class="form-lbl">Compilato da</div><input class="form-inp" id="p-compilatore" placeholder="Nome e cognome" autocomplete="off" oninput="prSaveComp()"></div>
   </div>
 
+  <div id="pr-backup"></div>
   <div id="pr-summary"></div>
 
   <div class="sec-lbl" id="pr-form-lbl">Nuova presenza</div>
@@ -758,13 +759,14 @@ function onSignedIn(){
     wrap.appendChild(btn);
   }
   toast('Connesso a Google Drive ✓');
+  prDriveSync();
 }
 
 function signOutGoogle(){
   if(gAccessToken){
     google.accounts.oauth2.revoke(gAccessToken,()=>{});
   }
-  gAccessToken=null;
+  gAccessToken=null;prBk.pulled=false;prBkRender();
   sessionStorage.removeItem('gToken');
   setDriveStatus('','disconnesso');
   const banner=document.getElementById('auth-banner');
@@ -1582,7 +1584,7 @@ const IMP_SUB=[['ok','Autorizzato'],['dv','Da autorizzare'],['ko','Non autorizza
 const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto','Site manager','Supervisore squadra montaggio acciaio'];
 const PR_SHORT={ok:'OK',dv:'Da verif.',ko:'NON CONF.',na:'N/A'};
 
-let PR={records:[],imprese:[],locks:{},log:[]}, prEditId=null, impEditId=null, prStoreOk=true;
+let PR={records:[],imprese:[],locks:{},log:[],delImp:[]}, prEditId=null, impEditId=null, prStoreOk=true;
 
 const pe=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1603,16 +1605,18 @@ const prSafe=s=>String(s||'').replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-
 function prLoad(){
   try{
     const raw=localStorage.getItem(PR_KEY);
-    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[]};}
+    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[]};}
   }catch(e){prStoreOk=false;}
 }
-function prSave(){
+function prSaveLocal(){
   try{localStorage.setItem(PR_KEY,JSON.stringify(PR));}
   catch(e){if(prStoreOk){prStoreOk=false;toast('Memoria del browser non disponibile: esporta il backup');}}
 }
+function prSave(){prSaveLocal();prBkTouch();}
 
 function prInit(){
   prLoad();
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   const fill=(id,arr)=>{const s=pe(id);if(s)s.innerHTML=arr.map(a=>`<option value="${a[0]}">${esc(a[1])}</option>`).join('');};
   fill('p-tipo',PR_TIPI.map(t=>[t.v,t.l]));
   fill('i-ruolo',IMP_RUOLI);fill('i-pos',IMP_POS);fill('i-durc',IMP_DURC);fill('i-pat',IMP_PAT);fill('i-sub',IMP_SUB);
@@ -1797,6 +1801,7 @@ function impDel(id){
   const i=PR.imprese.find(x=>x.id===id);if(!i)return;
   if(!confirm('Rimuovere '+i.nome+' dall\'elenco imprese? Le giornate già chiuse conservano la loro copia.'))return;
   PR.imprese=PR.imprese.filter(x=>x.id!==id);
+  PR.delImp=(PR.delImp||[]).concat(id);
   if(impEditId===id)impResetForm();
   prSave();prRender();
 }
@@ -1829,7 +1834,9 @@ async function prLock(){
   PR.locks[k]=lock;
   lock.hash=await prHash(c.ck,c.data);
   PR.log.push({k,ts:lock.ts,az:'chiusa',by:comp,hash:lock.hash});
-  prSave();prRender();toast('Giornata chiusa e sigillata ✓');
+  prSave();prRender();
+  prBackup(true);prPushNow();
+  toast('Giornata chiusa e sigillata ✓ Copia scaricata'+(gAccessToken?' e salvata su Drive':'. Accedi a Drive per salvarla anche online'));
 }
 function prUnlock(){
   const c=prCtx(),k=prLk(c.ck,c.data),l=PR.locks[k];if(!l)return;
@@ -1923,7 +1930,7 @@ function prImpHtml(d,c){
 }
 function prRender(){
   const c=prCtx(),d=prDay(c.ck,c.data);
-  prRenderLists(c.ck);
+  prRenderLists(c.ck);prBkRender();
   pe('pr-summary').innerHTML=prSummaryHtml(c,d);
   pe('pr-form').style.display=pe('pr-form-lbl').style.display=d.lock?'none':'';
   pe('pr-list').innerHTML=prListHtml(d,c);
@@ -1946,25 +1953,20 @@ function prCsv(){
   rs.forEach(r=>lines.push([prFmtD(r.data),r.cant,r.nome,r.impresa,r.qual,prTipo(r.tipo).l,r.ing,r.usc,r.pausa,prFmtH(prNet(r)),{si:'Sì',no:'No',na:'N/A'}[r.tess],r.note,r.ann?'ANNULLATA '+prFmtTs(r.ann.ts):'Valida'].map(q).join(';')));
   prDownload('﻿'+lines.join('\r\n'),`Presenze_${prSafe(c.cant)}.csv`,'text/csv;charset=utf-8');
 }
-function prBackup(){
+function prBackup(quiet){
   prDownload(JSON.stringify(PR,null,1),`Backup-registro-presenze_${prToday()}.json`,'application/json');
-  toast('Backup scaricato');
+  prBk.fileVer=prBk.ver;prBkRender();
+  if(!quiet)toast('Backup scaricato');
 }
 function prImport(input){
   const f=input.files&&input.files[0];if(!f)return;
   const rd=new FileReader();
   rd.onload=()=>{
     try{
-      const s=JSON.parse(rd.result);
+      const s0=JSON.parse(rd.result),s=s0.data||s0;
       if(!Array.isArray(s.records)||!Array.isArray(s.imprese))throw new Error('formato non valido');
-      const have=new Set(PR.records.map(r=>r.id)),haveI=new Set(PR.imprese.map(i=>i.id));
-      let n=0;
-      s.records.forEach(r=>{if(r&&r.id&&!have.has(r.id)){PR.records.push(r);n++;}});
-      s.imprese.forEach(i=>{if(i&&i.id&&!haveI.has(i.id))PR.imprese.push(i);});
-      Object.keys(s.locks||{}).forEach(k=>{if(!PR.locks[k])PR.locks[k]=s.locks[k];});
-      const hl=new Set(PR.log.map(l=>l.k+l.ts+l.az));
-      (s.log||[]).forEach(l=>{if(!hl.has(l.k+l.ts+l.az))PR.log.push(l);});
-      prSave();prRender();toast('Backup importato: '+n+' presenze aggiunte');
+      const n=prMerge(s);
+      prSave();prRender();toast('Backup importato: '+n+' voci aggiunte o aggiornate');
     }catch(e){toast('Backup non valido: '+e.message);}
   };
   rd.readAsText(f);input.value='';
@@ -2019,6 +2021,124 @@ function prPdf(cant,data){
   if(imp.table||imp.items.length)sections.push(imp);
   return{meta,sections,has:true};
 }
+
+// ── BACKUP DEL REGISTRO SU GOOGLE DRIVE ───────────────────────────────────────
+// Un solo file "_Backup_Registro_Presenze.json" nella cartella dei report, aggiornato a ogni modifica.
+// All'accesso a Google l'app scarica il file e lo UNISCE ai dati locali, poi lo ricarica: così non si
+// perde nulla anche in finestra privata o dopo aver cancellato la cronologia, e nessun dispositivo
+// sovrascrive i dati di un altro. Prima della prima lettura riuscita non viene mai scritto nulla.
+const PR_BK_NAME='_Backup_Registro_Presenze.json';
+const prBk={pulled:false,fileId:null,last:null,busy:false,err:'',timer:null,ver:0,driveVer:0,fileVer:0};
+
+function prAuthLost(){
+  prBk.pulled=false;gAccessToken=null;
+  try{sessionStorage.removeItem('gToken');}catch(e){}
+  setDriveStatus('error','sessione scaduta');
+  const banner=document.getElementById('auth-banner'),text=document.getElementById('auth-text');
+  if(banner)banner.classList.remove('signed');
+  if(text)text.innerHTML='<b>Accedi a Google Drive</b>Sessione scaduta, accedi di nuovo';
+  renderGsiButton();
+}
+async function prDrv(url,opt){
+  const o=Object.assign({},opt||{});
+  o.headers=Object.assign({'Authorization':'Bearer '+gAccessToken},o.headers||{});
+  const r=await fetch(url,o);
+  if(r.status===401){prAuthLost();const e=new Error('sessione Google scaduta: accedi di nuovo');e.status=401;throw e;}
+  if(!r.ok){const e=new Error('Drive ha risposto '+r.status);e.status=r.status;throw e;}
+  return r;
+}
+async function prFind(){
+  const q=encodeURIComponent("name='"+PR_BK_NAME+"' and '"+FOLDER_ID+"' in parents and trashed=false");
+  const r=await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy='+encodeURIComponent('modifiedTime desc')+'&pageSize=1&fields='+encodeURIComponent('files(id,modifiedTime)'));
+  const j=await r.json();
+  return (j.files&&j.files[0])||null;
+}
+// Unisce i dati di un backup a quelli locali senza mai perdere nulla (voci uguali: vince la più completa)
+function prMerge(s){
+  let n=0;
+  const w=r=>(r.rev?r.rev.length:0)+(r.ann?1:0)+(r.usc?1:0);
+  const tomb=new Set([...(PR.delImp||[]),...(s.delImp||[])]);PR.delImp=[...tomb];
+  const mine=new Map(PR.records.map(r=>[r.id,r]));
+  (s.records||[]).forEach(r=>{
+    if(!r||!r.id)return;
+    const m=mine.get(r.id);
+    if(!m){PR.records.push(r);n++;}
+    else if(w(r)>w(m)){Object.assign(m,r);n++;}
+  });
+  const mi=new Set(PR.imprese.map(i=>i.id));
+  (s.imprese||[]).forEach(i=>{if(i&&i.id&&!tomb.has(i.id)&&!mi.has(i.id)){PR.imprese.push(i);n++;}});
+  PR.imprese=PR.imprese.filter(i=>!tomb.has(i.id));
+  const hl=new Set(PR.log.map(l=>l.k+'|'+l.ts+'|'+l.az));
+  (s.log||[]).forEach(l=>{if(l&&!hl.has(l.k+'|'+l.ts+'|'+l.az))PR.log.push(l);});
+  Object.keys(s.locks||{}).forEach(k=>{
+    if(PR.locks[k])return;
+    const riaperta=PR.log.some(l=>l.k===k&&l.az==='riaperta'&&l.ts>s.locks[k].ts);
+    if(!riaperta){PR.locks[k]=s.locks[k];n++;}
+  });
+  if(n){prSaveLocal();}
+  return n;
+}
+async function prDriveSync(){
+  if(!gAccessToken||prBk.busy)return;
+  prBk.busy=true;prBk.err='';prBkRender();
+  try{
+    const f=await prFind();
+    if(f){
+      prBk.fileId=f.id;
+      const r=await prDrv('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media');
+      const j=await r.json(),n=prMerge(j.data||j);
+      if(n){prRender();toast('Registro presenze ripristinato da Drive ('+n+' voci)');}
+    }
+    prBk.pulled=true;
+    await prDrivePush();
+  }catch(e){prBk.err=e.message;}
+  prBk.busy=false;prBkRender();
+}
+async function prDrivePush(){
+  if(!gAccessToken||!prBk.pulled)return;
+  const ver=prBk.ver;
+  const body=JSON.stringify({app:'omnia-site-manager',v:1,savedAt:new Date().toISOString(),data:PR});
+  const create=async()=>{
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify({name:PR_BK_NAME,parents:[FOLDER_ID],mimeType:'application/json'})],{type:'application/json'}));
+    form.append('file',new Blob([body],{type:'application/json'}));
+    const r=await prDrv('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:form});
+    prBk.fileId=(await r.json()).id;
+  };
+  if(prBk.fileId){
+    try{await prDrv('https://www.googleapis.com/upload/drive/v3/files/'+prBk.fileId+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body});}
+    catch(e){if(e.status===404){prBk.fileId=null;await create();}else throw e;}
+  }else await create();
+  prBk.last=new Date();prBk.err='';prBk.driveVer=ver;
+}
+async function prPushSafe(){
+  clearTimeout(prBk.timer);
+  if(!gAccessToken||!prBk.pulled){prBkRender();return;}
+  if(prBk.busy){prBk.timer=setTimeout(prPushSafe,1500);return;}
+  prBk.busy=true;prBkRender();
+  try{await prDrivePush();}catch(e){prBk.err=e.message;}
+  prBk.busy=false;prBkRender();
+  if(!prBk.err&&prBk.driveVer!==prBk.ver)prBk.timer=setTimeout(prPushSafe,1500);
+}
+function prPushNow(){prPushSafe();}
+function prBkTouch(){prBk.ver++;prBkRender();clearTimeout(prBk.timer);prBk.timer=setTimeout(prPushSafe,2500);}
+function prBkRetry(){if(prBk.pulled)prPushSafe();else prDriveSync();}
+function prBkRender(){
+  const el=document.getElementById('pr-backup');if(!el)return;
+  const has=PR.records.length||PR.imprese.length;
+  const box=(cls,html)=>{el.innerHTML=`<div class="pr-alert ${cls}">${html}</div>`;};
+  if(prBk.err)return box('warn',`<b>Backup su Drive non riuscito</b><br>${esc(prBk.err)}<br><span class="pill" style="margin-top:8px" onclick="prBkRetry()">Riprova</span>`);
+  if(!gAccessToken)return box(has?'warn':'info',`<b>Dati salvati solo in questo browser</b><br>Accedi a Google Drive (pulsante in alto) per il backup automatico e il ripristino. In una finestra privata, o cancellando la cronologia, i dati vanno persi.`);
+  if(!prBk.pulled||prBk.busy)return box('info','Sincronizzazione con Drive in corso...');
+  if(prBk.driveVer!==prBk.ver)return box('info','Salvataggio su Drive in corso...');
+  const t=prBk.last?prBk.last.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
+  box('ok',`<b>Backup su Drive aggiornato</b>${t?' alle '+t:''}. Il registro si ripristina da solo a ogni accesso.`);
+}
+// Avvisa prima di chiudere la finestra se ci sono modifiche non ancora salvate né su Drive né in un file
+window.addEventListener('beforeunload',e=>{
+  const has=PR.records.length||PR.imprese.length;
+  if(has&&prBk.ver!==prBk.driveVer&&prBk.ver!==prBk.fileVer){e.preventDefault();e.returnValue='';return '';}
+});
 
 window.addEventListener('DOMContentLoaded',init);
 document.addEventListener('change',saveState);
