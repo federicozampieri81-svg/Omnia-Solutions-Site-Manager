@@ -209,6 +209,14 @@ body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;b
 .photo-del svg{width:12px;height:12px}
 .photo-count{font-size:11px;color:var(--label2);padding:0 14px 10px}
 input[type=file]{display:none}
+.br-it{padding:11px 14px;border-bottom:.5px solid var(--sep2)}
+.br-it:last-child{border-bottom:none}
+.br-in{width:100%;padding:9px 11px;border-radius:9px;border:none;background:var(--fill);font-size:15px;font-family:inherit;color:var(--label);outline:none;box-sizing:border-box}
+textarea.br-in{resize:vertical;min-height:44px}
+.br-g{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.br-g>*{flex:1 1 110px;min-width:0}
+.br-x{background:none;border:none;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 0}
+.br-h{display:flex;justify-content:space-between;align-items:center}
 @media print{.nav,.tabs,.btn-row,.sc-btns,.sco-na,.toggle-desc,.desc-grid{display:none!important}.pane{display:block!important}#pane-giornaliera,#pane-presenze,#pane-settimanale,#pane-quindicinale,#pane-mensile,#pane-report,#pane-storico{display:none!important}#pane-sopralluogo{display:block!important;padding:0}body{font-size:12px}}
 @media(max-width:600px){.score-num{font-size:62px}.tab{min-width:58px}.tab-lbl{font-size:8.5px}.bar-lbl{width:64px}.sco .l{display:none}}
 </style>
@@ -236,6 +244,10 @@ input[type=file]{display:none}
   <div class="tab" onclick="showPane('presenze')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
     <div class="tab-lbl">Presenze</div>
+  </div>
+  <div class="tab" onclick="showPane('briefing')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <div class="tab-lbl">Briefing</div>
   </div>
   <div class="tab" onclick="showPane('settimanale')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>
@@ -357,6 +369,26 @@ input[type=file]{display:none}
   <datalist id="dl-nomi"></datalist>
   <datalist id="dl-imprese"></datalist>
   <datalist id="dl-qual"></datalist>
+</div>
+
+<div class="pane" id="pane-briefing">
+  <div class="sec-lbl">Briefing per le squadre</div>
+  <div class="card">
+    <div class="form-row"><div class="form-lbl">Cantiere</div><input class="form-inp" id="br-cantiere" list="dl-cantieri" placeholder="Nome / indirizzo" autocomplete="off" onchange="brCtx()"></div>
+    <div class="form-row"><div class="form-lbl">Tipo</div><div class="rep-sel" style="margin:0;margin-left:auto"><button class="rep-btn active" id="br-tg" onclick="brTipo('g')">Giornaliero</button><button class="rep-btn" id="br-ts" onclick="brTipo('s')">Settimanale</button></div></div>
+    <div class="form-row"><div class="form-lbl" id="br-data-lbl">Per il giorno</div><input class="form-inp" id="br-data" type="date" onchange="brCtx()"></div>
+  </div>
+  <div id="br-body"></div>
+  <div id="br-dest"></div>
+  <div class="btn-row">
+    <button class="btn btn-blue" onclick="brPdf()">Genera PDF</button>
+    <button class="btn btn-green" onclick="brShare()">Condividi</button>
+    <button class="btn btn-ghost" onclick="brMail()">Email</button>
+    <button class="btn btn-ghost" onclick="brWa()">WhatsApp</button>
+    <button class="btn btn-ghost" onclick="brReset()">Azzera</button>
+  </div>
+  <div id="br-out" class="rep-out" style="display:none;margin-top:12px"></div>
+  <div class="pr-alert info" style="margin-top:12px">Email e WhatsApp inviano il testo del briefing; il PDF va allegato (Condividi lo allega da solo dove il dispositivo lo consente). Ogni PDF viene salvato anche su Drive.</div>
 </div>
 
 <div class="pane" id="pane-settimanale">
@@ -494,6 +526,17 @@ input[type=file]{display:none}
       <button class="btn btn-ghost" onclick="copyRep()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copia</button>
     </div>
     <div id="rep-out" class="rep-out" style="display:none"></div>
+  </div>
+  <div class="card" style="padding:16px 14px;margin-top:10px">
+    <div class="sec-lbl" style="padding-top:0">Report automatico dai giornalieri</div>
+    <div style="font-size:13px;color:var(--label2);margin-bottom:8px">Riepiloga presenze, lavorazioni, meteo e anomalie delle giornate già registrate. I dati dei giornalieri si memorizzano quando generi il Rapporto Giornaliero.</div>
+    <input type="hidden" id="ar-tipo" value="s">
+    <div class="form-row"><div class="form-lbl">Cantiere</div><input class="form-inp" id="ar-cantiere" list="dl-cantieri" placeholder="come in Oggi" autocomplete="off"></div>
+    <div class="rep-sel" style="margin:10px 0"><button class="rep-btn active" id="ar-tg-s" onclick="arTipo('s')">Settimanale</button><button class="rep-btn" id="ar-tg-m" onclick="arTipo('m')">Mensile</button></div>
+    <div class="form-row" id="ar-row-s"><div class="form-lbl">Settimana del</div><input class="form-inp" id="ar-data" type="date"></div>
+    <div class="form-row" id="ar-row-m"><div class="form-lbl">Mese</div><select class="form-inp" id="ar-mm" style="flex:1"></select><input class="form-inp" id="ar-yy" type="number" min="2020" max="2100" style="max-width:80px"></div>
+    <div class="btn-row" style="margin-top:12px"><button class="btn btn-green" onclick="autoRep()">Genera report automatico</button></div>
+    <div id="ar-out" class="rep-out" style="display:none"></div>
   </div>
 </div>
 
@@ -697,7 +740,7 @@ function init(){
   ['g-data','s-dal'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
   const mm=document.getElementById('m-mese');if(mm)mm.value=today.slice(0,7);
   document.getElementById('sp-data').value=today;
-  renderAll();loadState();initSP();loadSP();loadDriveHistory();loadPhotos();prInit();
+  renderAll();loadState();initSP();loadSP();loadDriveHistory();loadPhotos();prInit();brInit();arInit();
   ['giornaliera','settimanale','quindicinale','mensile','sopralluogo'].forEach(renderPhotos);
   initGoogleAuth();
 }
@@ -870,9 +913,10 @@ function showPane(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const pane=document.getElementById('pane-'+name);
   if(pane){pane.style.display='block';pane.classList.add('active');}
-  const order=['giornaliera','presenze','settimanale','quindicinale','mensile','sopralluogo','storico','report'];
+  const order=['giornaliera','presenze','briefing','settimanale','quindicinale','mensile','sopralluogo','storico','report'];
   const idx=order.indexOf(name);
   if(name==='presenze'&&typeof prRender==='function')prRender();
+  if(name==='briefing'&&typeof brShow==='function')brShow();
   if(idx>=0)document.querySelectorAll('.tab')[idx]?.classList.add('active');
 }
 
@@ -1221,6 +1265,8 @@ function genReport(){
       title:sec.titolo,score:null,
       items:sec.voci.map(v=>({label:v.testo+(v.sub?' — '+v.sub:''),value:getStatoPill(v.id)||'—',note:getNoteV(v.id)}))
     }));
+    const iss=[];CHECKLISTS.giornaliera.filter(s=>!s.tipo).forEach(sec=>sec.voci.forEach(v=>{const st=getStatoPill(v.id);if(st==='⚠'||st==='✕')iss.push({s:sec.titolo,v:v.testo,st,n:getNoteV(v.id)});}));
+    snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),foto:(photos.giornaliera||[]).length});
     const pr=prPdf(gv('g-cantiere'),data||prToday());
     meta.push(...pr.meta);
     sections=[...pr.sections,...sections];
@@ -1275,7 +1321,7 @@ function pdfSafe(s){
     .replace(/[^\n -~¡-ÿ€‘’“”•–—…]/g,'');
 }
 
-function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePrefix,footnote}){
+function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePrefix,footnote,target:tgt,previewNote,onBlob}){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const _text=doc.text.bind(doc),_split=doc.splitTextToSize.bind(doc);
@@ -1325,7 +1371,7 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
       let x=MX;
       cells.forEach((lines,i)=>{
         const v=String(row[i]);
-        const col=(v==='No'||v.startsWith('NON')||v.startsWith('SCAD'))?[210,50,40]:v.startsWith('Da verif')?[200,140,0]:[30,30,30];
+        const col=(v==='No'||v==='URGENTE'||v.startsWith('NON')||v.startsWith('SCAD'))?[210,50,40]:v.startsWith('Da verif')?[200,140,0]:[30,30,30];
         doc.setFont('helvetica',col[0]===30?'normal':'bold');doc.setTextColor(...col);
         doc.text(lines,x+1.2,y+3.4);
         x+=t.widths[i];
@@ -1467,8 +1513,9 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
 
   // Preview inline
   const url=URL.createObjectURL(blob);
-  const target = document.getElementById('sp-report') && currentPaneIsSopralluogo() ? 'sp-report' : 'rep-out';
-  showPdfPreview(target,url,filename);
+  const target = tgt||(document.getElementById('sp-report') && currentPaneIsSopralluogo() ? 'sp-report' : 'rep-out');
+  showPdfPreview(target,url,filename,previewNote);
+  if(onBlob)onBlob(blob,filename);
 
   uploadPdfToDrive(blob,filename);
 }
@@ -1478,7 +1525,7 @@ function currentPaneIsSopralluogo(){
   return p&&p.classList.contains('active');
 }
 
-function showPdfPreview(targetId,url,filename){
+function showPdfPreview(targetId,url,filename,note){
   const out=document.getElementById(targetId);
   if(!out)return;
   out.style.display='block';
@@ -1486,7 +1533,7 @@ function showPdfPreview(targetId,url,filename){
   out.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-      <div style="flex:1"><div style="font-weight:700;font-size:14px">${filename}</div><div style="font-size:12px;color:var(--label2)">PDF generato con foto incorporate</div></div>
+      <div style="flex:1"><div style="font-weight:700;font-size:14px">${filename}</div><div style="font-size:12px;color:var(--label2)">${note||'PDF generato con foto incorporate'}</div></div>
     </div>
     <div style="display:flex;gap:8px">
       <a href="${url}" target="_blank" style="flex:1" class="btn btn-blue btn-sm" style="text-decoration:none;text-align:center">Apri PDF</a>
@@ -1533,7 +1580,7 @@ async function uploadPdfToDrive(blob,filename){
     }
     const data=await res.json();
     setDriveStatus('ok','salvato ✓');
-    const type = filename.includes('Sopralluogo')?'Sopralluogo':filename.includes('Giornaliero')?'Giornaliero':filename.includes('Settimanale')?'Settimanale':filename.includes('Quindicinale')?'Quindicinale':'Mensile';
+    const type = filename.includes('Briefing')?'Briefing':filename.includes('Sopralluogo')?'Sopralluogo':filename.includes('Giornaliero')?'Giornaliero':filename.includes('Settimanale')?'Settimanale':filename.includes('Quindicinale')?'Quindicinale':'Mensile';
     addHist(filename,type,data.webViewLink||FOLDER_URL,new Date().toISOString());
     toast('Salvato su Google Drive ✓');
   }catch(e){
@@ -1551,7 +1598,7 @@ function loadDriveHistory(){try{const r=sessionStorage.getItem('drvH');if(r)driv
 function renderHist(){
   const body=document.getElementById('hist-body');if(!body)return;
   if(!driveHistory.length){body.innerHTML='<div class="hist-empty">Nessun documento salvato in questa sessione.</div>';return;}
-  const tc={'Giornaliero':'var(--blue-bg)','Settimanale':'var(--green-bg)','Quindicinale':'var(--orange-bg)','Mensile':'var(--purple-bg)','Sopralluogo':'var(--red-bg)'};
+  const tc={'Giornaliero':'var(--blue-bg)','Settimanale':'var(--green-bg)','Quindicinale':'var(--orange-bg)','Mensile':'var(--purple-bg)','Sopralluogo':'var(--red-bg)','Briefing':'var(--yellow-bg)'};
   body.innerHTML=driveHistory.map(h=>{const d=new Date(h.iso);const ds=d.toLocaleDateString('it-IT',{day:'numeric',month:'short'});const ts=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
     return`<div class="hist-row"><span class="hist-type" style="background:${tc[h.type]||'var(--fill)'}">${h.type}</span><span class="hist-name">${h.name.replace('.pdf','')}</span><span class="hist-date">${ds} ${ts}</span>${h.url?`<a href="${h.url}" target="_blank">Apri ↗</a>`:''}</div>`;
   }).join('');
@@ -1584,7 +1631,7 @@ const IMP_SUB=[['ok','Autorizzato'],['dv','Da autorizzare'],['ko','Non autorizza
 const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto','Site manager','Supervisore squadra montaggio acciaio'];
 const PR_SHORT={ok:'OK',dv:'Da verif.',ko:'NON CONF.',na:'N/A'};
 
-let PR={records:[],imprese:[],locks:{},log:[],delImp:[]}, prEditId=null, impEditId=null, prStoreOk=true;
+let PR={records:[],imprese:[],locks:{},log:[],delImp:[],snap:{},briefs:{},rub:[]}, prEditId=null, impEditId=null, prStoreOk=true;
 
 const pe=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1605,7 +1652,7 @@ const prSafe=s=>String(s||'').replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-
 function prLoad(){
   try{
     const raw=localStorage.getItem(PR_KEY);
-    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[]};}
+    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[],snap:s.snap||{},briefs:s.briefs||{},rub:s.rub||[]};}
   }catch(e){prStoreOk=false;}
 }
 function prSaveLocal(){
@@ -2075,7 +2122,13 @@ function prMerge(s){
     const riaperta=PR.log.some(l=>l.k===k&&l.az==='riaperta'&&l.ts>s.locks[k].ts);
     if(!riaperta){PR.locks[k]=s.locks[k];n++;}
   });
-  if(n){prSaveLocal();}
+  PR.snap=PR.snap||{};PR.briefs=PR.briefs||{};PR.rub=PR.rub||[];
+  Object.keys(s.snap||{}).forEach(k=>{const a=s.snap[k],m=PR.snap[k];if(a&&(!m||(a.ts||'')>(m.ts||''))){PR.snap[k]=a;n++;}});
+  Object.keys(s.briefs||{}).forEach(k=>{const a=s.briefs[k],m=PR.briefs[k];if(a&&(!m||(a.upd||'')>(m.upd||''))){PR.briefs[k]=a;n++;}});
+  const mr=new Set(PR.rub.map(c=>c.id));
+  (s.rub||[]).forEach(c=>{if(c&&c.id&&!tomb.has(c.id)&&!mr.has(c.id)){PR.rub.push(c);n++;}});
+  PR.rub=PR.rub.filter(c=>!tomb.has(c.id));
+  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();}}
   return n;
 }
 async function prDriveSync(){
@@ -2139,6 +2192,321 @@ window.addEventListener('beforeunload',e=>{
   const has=PR.records.length||PR.imprese.length;
   if(has&&prBk.ver!==prBk.driveVer&&prBk.ver!==prBk.fileVer){e.preventDefault();e.returnValue='';return '';}
 });
+
+// ── BRIEFING (giornaliero / settimanale) ──────────────────────────────────────
+const BR_GG=['Tutta la settimana','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const BRX={cant:'',tipo:'g',data:''};
+let brLast=null, brOff=new Set();
+const brUid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const brIso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const brPd=iso=>{const p=iso.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);};
+const brAdd=(iso,n)=>{const d=brPd(iso);d.setDate(d.getDate()+n);return brIso(d);};
+const brDow=iso=>(brPd(iso).getDay()+6)%7;
+const brMon=iso=>brAdd(iso,-brDow(iso));
+const brDefDate=t=>t==='g'?brAdd(prToday(),1):brAdd(brMon(prToday()),7);
+const brLong=iso=>{const s=brPd(iso).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return s.charAt(0).toUpperCase()+s.slice(1);};
+const brKey=()=>prKey(BRX.cant)+'|'+BRX.tipo+'|'+BRX.data;
+function brCur(create){
+  const k=brKey();let b=PR.briefs[k];
+  if(!b&&create){b=PR.briefs[k]={k,ck:prKey(BRX.cant),cant:BRX.cant,tipo:BRX.tipo,data:BRX.data,sq:[],att:[],mat:[],note:'',upd:new Date().toISOString()};}
+  return b;
+}
+function brTouch(b){b.upd=new Date().toISOString();b.cant=BRX.cant||b.cant;prSave();}
+function brInit(){
+  try{brOff=new Set(JSON.parse(localStorage.getItem('smBrOff')||'[]'));}catch(e){}
+  BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');
+  pe('br-cantiere').value=BRX.cant;pe('br-data').value=BRX.data;
+  brLbl();brRender();brDestRender();
+}
+function brShow(){
+  if(!gv('br-cantiere')&&gv('g-cantiere')){pe('br-cantiere').value=gv('g-cantiere');brCtx();}
+  else{brRender();}
+  brDestRender();
+}
+function brLbl(){
+  pe('br-data-lbl').textContent=BRX.tipo==='g'?'Per il giorno':'Settimana dal';
+  pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');
+}
+function brTipo(t){BRX.tipo=t;BRX.data=brDefDate(t);pe('br-data').value=BRX.data;brLbl();brRender();}
+function brCtx(){
+  BRX.cant=gv('br-cantiere');
+  let d=gv('br-data')||brDefDate(BRX.tipo);
+  if(BRX.tipo==='s'){d=brMon(d);pe('br-data').value=d;}
+  BRX.data=d;brLbl();brRender();
+}
+function brEdit(a,id,f,v,lid){
+  const b=brCur(true);
+  if(a==='note'){b.note=v;}
+  else{let o=b[a].find(x=>x.id===id);if(o&&lid)o=o.lav.find(x=>x.id===lid);if(o)o[f]=v;}
+  brTouch(b);
+}
+function brAddItem(a,id){
+  const b=brCur(true);
+  if(a==='sq')b.sq.push({id:brUid(),nome:'',capo:'',lav:[{id:brUid(),giorno:'0',testo:'',istr:''}]});
+  else if(a==='lav'){const s=b.sq.find(x=>x.id===id);if(s)s.lav.push({id:brUid(),giorno:'0',testo:'',istr:''});}
+  else if(a==='att')b.att.push({id:brUid(),testo:'',qta:'',per:'',entro:'',prio:'normale'});
+  else if(a==='mat')b.mat.push({id:brUid(),testo:'',qta:'',entro:'',note:''});
+  brTouch(b);brRender();
+}
+function brDel(a,id,lid){
+  const b=brCur(false);if(!b)return;
+  if(a==='lav'){const s=b.sq.find(x=>x.id===id);if(s)s.lav=s.lav.filter(x=>x.id!==lid);}
+  else b[a]=b[a].filter(x=>x.id!==id);
+  brTouch(b);brRender();
+}
+function brReset(){
+  const b=brCur(false);if(!b)return;
+  if(!confirm('Azzerare questo briefing (lavorazioni, attrezzature, materiali, note)?'))return;
+  b.sq=[];b.att=[];b.mat=[];b.note='';brTouch(b);brRender();toast('Briefing azzerato');
+}
+function brRender(){
+  const el=pe('br-body');if(!el)return;
+  const b=brCur(false)||{sq:[],att:[],mat:[],note:''},wk=BRX.tipo==='s';
+  const I=(v,ph,call,extra)=>`<input class="br-in" ${extra||''} value="${esc(v)}" placeholder="${esc(ph)}" oninput="${call}">`;
+  const T=(v,ph,call)=>`<textarea class="br-in" rows="2" placeholder="${esc(ph)}" oninput="${call}">${esc(v)}</textarea>`;
+  const X=(txt,call)=>`<button class="br-x" onclick="${call}">${txt}</button>`;
+  const desc=wk?`Settimana dal ${prFmtD(BRX.data)} al ${prFmtD(brAdd(BRX.data,5))} (lun-sab)`:brLong(BRX.data||brDefDate('g'));
+  let h=`<div class="pr-alert info"><b>${wk?'Briefing settimanale':'Briefing giornaliero'}</b><br>${esc(desc)}</div>`;
+
+  h+=`<div class="sec-lbl">Lavorazioni concordate con le squadre</div>`;
+  h+=b.sq.map(s=>`<div class="card">
+    <div class="br-it"><div class="br-h"><b>Squadra</b>${X('Rimuovi squadra',`brDel('sq','${s.id}')`)}</div>
+      <div style="margin-top:6px">${I(s.nome,'Squadra / impresa (es. Montaggio acciaio)',`brEdit('sq','${s.id}','nome',this.value)`,'list="dl-imprese"')}</div>
+      <div style="margin-top:6px">${I(s.capo,'Caposquadra / referente',`brEdit('sq','${s.id}','capo',this.value)`)}</div></div>
+    ${s.lav.map((l,i)=>`<div class="br-it"><div class="br-h"><span class="pr-tag">Lavorazione ${i+1}</span>${X('Rimuovi',`brDel('lav','${s.id}','${l.id}')`)}</div>
+      ${wk?`<select class="br-in" style="margin-top:6px" onchange="brEdit('sq','${s.id}','giorno',this.value,'${l.id}')">${BR_GG.map((g,k)=>`<option value="${k}"${String(l.giorno||'0')===String(k)?' selected':''}>${g}</option>`).join('')}</select>`:''}
+      <div style="margin-top:6px">${T(l.testo,'Cosa si fa (es. Montaggio telai asse C, piano 1)',`brEdit('sq','${s.id}','testo',this.value,'${l.id}')`)}</div>
+      <div style="margin-top:6px">${T(l.istr,'Istruzioni chiare: come, con quali mezzi, sicurezza, punti di attenzione',`brEdit('sq','${s.id}','istr',this.value,'${l.id}')`)}</div></div>`).join('')}
+    <div class="br-it"><span class="pill" onclick="brAddItem('lav','${s.id}')">+ Aggiungi lavorazione</span></div></div>`).join('');
+  h+=`<div class="btn-row" style="margin-top:0;margin-bottom:6px"><button class="btn btn-ghost btn-sm" onclick="brAddItem('sq')">+ Aggiungi squadra</button></div>`;
+
+  h+=`<div class="sec-lbl">Attrezzature mancanti</div><div class="card">`;
+  h+=b.att.map(a=>`<div class="br-it"><div class="br-h"><span></span>${X('Rimuovi',`brDel('att','${a.id}')`)}</div>
+    ${I(a.testo,'Attrezzatura mancante (es. Chiave dinamometrica 1")',`brEdit('att','${a.id}','testo',this.value)`)}
+    <div class="br-g">${I(a.qta,'Q.tà',`brEdit('att','${a.id}','qta',this.value)`)}${I(a.per,'Per chi / squadra',`brEdit('att','${a.id}','per',this.value)`)}</div>
+    <div class="br-g"><input class="br-in" type="date" title="Serve entro" value="${esc(a.entro)}" onchange="brEdit('att','${a.id}','entro',this.value)"><select class="br-in" onchange="brEdit('att','${a.id}','prio',this.value)"><option value="normale"${a.prio!=='urgente'?' selected':''}>Priorità normale</option><option value="urgente"${a.prio==='urgente'?' selected':''}>URGENTE</option></select></div></div>`).join('');
+  h+=`<div class="br-it"><span class="pill" onclick="brAddItem('att')">+ Aggiungi attrezzatura</span></div></div>`;
+
+  h+=`<div class="sec-lbl">Materiali da ordinare / necessari per le prossime lavorazioni</div><div class="card">`;
+  h+=b.mat.map(m=>`<div class="br-it"><div class="br-h"><span></span>${X('Rimuovi',`brDel('mat','${m.id}')`)}</div>
+    ${I(m.testo,'Materiale (es. Bulloni M20 cl. 8.8)',`brEdit('mat','${m.id}','testo',this.value)`)}
+    <div class="br-g">${I(m.qta,'Quantità e unità',`brEdit('mat','${m.id}','qta',this.value)`)}<input class="br-in" type="date" title="Necessario in cantiere entro" value="${esc(m.entro)}" onchange="brEdit('mat','${m.id}','entro',this.value)"></div>
+    <div style="margin-top:6px">${I(m.note,'Note (fornitore, specifiche, ordine già fatto...)',`brEdit('mat','${m.id}','note',this.value)`)}</div></div>`).join('');
+  h+=`<div class="br-it"><span class="pill" onclick="brAddItem('mat')">+ Aggiungi materiale</span></div></div>`;
+
+  h+=`<div class="sec-lbl">Note generali e sicurezza</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Raccomandazioni valide per tutti (viabilità, DPI, aree interdette, meteo...)" oninput="brEdit('note',null,null,this.value)">${esc(b.note||'')}</textarea></div>`;
+  el.innerHTML=h;
+}
+
+// Rubrica destinatari (squadre e direzione): salvata nel registro e quindi nel backup su Drive
+function brDestRender(){
+  const el=pe('br-dest');if(!el)return;
+  const grp=(g,l)=>{
+    const L=PR.rub.filter(c=>c.gr===g).sort((a,b)=>a.nome.localeCompare(b.nome));
+    return `<div class="sec-lbl">${l}</div><div class="card">`+(L.length?L.map(c=>`<div class="br-it" style="display:flex;gap:10px;align-items:center">
+      <input type="checkbox" ${brOff.has(c.id)?'':'checked'} onchange="brSel('${c.id}',this.checked)">
+      <div style="flex:1;min-width:0"><b>${esc(c.nome)}</b><div style="font-size:12px;color:var(--label2)">${esc([c.email,c.tel].filter(Boolean).join(' · ')||'nessun recapito')}</div></div>
+      <button class="br-x" onclick="brContactDel('${c.id}')">Elimina</button></div>`).join(''):`<div class="br-it" style="color:var(--label2);font-size:14px">Nessun contatto.</div>`)+`</div>`;
+  };
+  el.innerHTML=grp('sq','Destinatari - squadre')+grp('dir','Destinatari - direzione aziendale')+
+   `<div class="card"><div class="br-it"><b>Aggiungi destinatario</b>
+    <div class="br-g"><input class="br-in" id="br-cn" placeholder="Nome (es. Rossi - Caposquadra)"><select class="br-in" id="br-cg"><option value="sq">Squadra</option><option value="dir">Direzione</option></select></div>
+    <div class="br-g"><input class="br-in" id="br-ce" type="email" placeholder="Email"><input class="br-in" id="br-ct" type="tel" placeholder="Cellulare"></div>
+    <div style="margin-top:8px"><span class="pill" onclick="brContactAdd()">+ Aggiungi</span></div></div></div>`;
+}
+function brSel(id,on){if(on)brOff.delete(id);else brOff.add(id);try{localStorage.setItem('smBrOff',JSON.stringify([...brOff]));}catch(e){}}
+function brContactAdd(){
+  const nome=gv('br-cn');if(!nome){toast('Inserisci il nome');return;}
+  PR.rub.push({id:brUid(),nome,email:gv('br-ce'),tel:gv('br-ct'),gr:gv('br-cg')||'sq'});
+  prSave();brDestRender();
+}
+function brContactDel(id){
+  if(!confirm('Eliminare questo destinatario?'))return;
+  PR.rub=PR.rub.filter(c=>c.id!==id);PR.delImp=[...new Set([...(PR.delImp||[]),id])];
+  prSave();brDestRender();
+}
+const brSelected=()=>PR.rub.filter(c=>!brOff.has(c.id));
+
+function brOk(b){
+  if(!BRX.cant){toast('Inserisci il cantiere');return false;}
+  if(!b||!(b.sq.some(s=>s.lav.some(l=>l.testo.trim()))||b.att.some(a=>a.testo.trim())||b.mat.some(m=>m.testo.trim()))){toast('Inserisci almeno una lavorazione, un\'attrezzatura o un materiale');return false;}
+  return true;
+}
+function brText(b){
+  const wk=b.tipo==='s',L=[];
+  L.push((wk?'BRIEFING SETTIMANALE':'BRIEFING GIORNALIERO')+' - '+b.cant);
+  L.push(wk?`Settimana dal ${prFmtD(b.data)} al ${prFmtD(brAdd(b.data,5))}`:brLong(b.data));
+  const comp=gv('p-compilatore');if(comp)L.push('Preparato da: '+comp);
+  L.push('');L.push('LAVORAZIONI');
+  b.sq.forEach(s=>{
+    const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
+    L.push('');L.push('> '+(s.nome||'Squadra')+(s.capo?' (ref. '+s.capo+')':''));
+    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach((l,i)=>{
+      L.push(`${i+1}. ${wk&&+l.giorno?'['+BR_GG[+l.giorno]+'] ':''}${l.testo.trim()}`);
+      if(l.istr.trim())L.push('   Istruzioni: '+l.istr.trim());
+    });
+  });
+  const at=b.att.filter(a=>a.testo.trim());
+  if(at.length){L.push('');L.push('ATTREZZATURE MANCANTI');at.forEach(a=>L.push('- '+(a.prio==='urgente'?'[URGENTE] ':'')+a.testo+(a.qta?' x '+a.qta:'')+(a.per?' ('+a.per+')':'')+(a.entro?' entro '+prFmtD(a.entro):'')));}
+  const ma=b.mat.filter(m=>m.testo.trim());
+  if(ma.length){L.push('');L.push('MATERIALI DA ORDINARE / NECESSARI');ma.forEach(m=>L.push('- '+m.testo+(m.qta?' x '+m.qta:'')+(m.entro?' entro '+prFmtD(m.entro):'')+(m.note?' - '+m.note:'')));}
+  if((b.note||'').trim()){L.push('');L.push('NOTE E SICUREZZA');L.push(b.note.trim());}
+  return L.join('\n');
+}
+function brPdf(){
+  const b=brCur(false);if(!brOk(b))return false;
+  const wk=b.tipo==='s',now=new Date();
+  const meta=[['Destinatari','Squadre e Direzione aziendale'],['Cantiere',b.cant],
+    ['Briefing',wk?`Settimanale - dal ${prFmtD(b.data)} al ${prFmtD(brAdd(b.data,5))} (lun-sab)`:'Giornaliero - '+brLong(b.data)]];
+  const comp=gv('p-compilatore');if(comp)meta.push(['Preparato da',comp]);
+  meta.push(['Emesso il',now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})]);
+  const sections=[];
+  const lav={title:'Lavorazioni concordate con le squadre',score:null,items:[]};
+  const rows=[];let n=0;
+  b.sq.forEach(s=>{
+    const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
+    rows.push({group:(s.nome||'Squadra')+(s.capo?'  -  Referente: '+s.capo:'')});
+    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.istr.trim()||'—']));
+  });
+  if(rows.length)lav.table=wk?{head:['N.','Giorno','Lavorazione','Istruzioni operative'],widths:[8,26,58,86],rows}:{head:['N.','Lavorazione','Istruzioni operative'],widths:[8,70,100],rows};
+  else lav.items.push({label:'Nessuna lavorazione inserita.',value:'',note:''});
+  sections.push(lav);
+  const at=b.att.filter(a=>a.testo.trim());
+  const sa={title:'Attrezzature mancanti',score:null,items:[]};
+  if(at.length)sa.table={head:['N.','Attrezzatura','Q.ta','Per','Serve entro','Priorita'],widths:[8,62,16,42,24,26],rows:at.map((a,i)=>[String(i+1),a.testo,a.qta||'—',a.per||'—',a.entro?prFmtD(a.entro):'—',a.prio==='urgente'?'URGENTE':'Normale'])};
+  else sa.items.push({label:'Nessuna attrezzatura mancante segnalata.',value:'',note:''});
+  sections.push(sa);
+  const ma=b.mat.filter(m=>m.testo.trim());
+  const sm={title:'Materiali da ordinare / necessari per le prossime lavorazioni',score:null,items:[]};
+  if(ma.length)sm.table={head:['N.','Materiale','Quantita','Necessario entro','Note'],widths:[8,62,26,28,54],rows:ma.map((m,i)=>[String(i+1),m.testo,m.qta||'—',m.entro?prFmtD(m.entro):'—',m.note||'—'])};
+  else sm.items.push({label:'Nessun materiale da ordinare segnalato.',value:'',note:''});
+  sections.push(sm);
+  if((b.note||'').trim())sections.push({title:'Note generali e sicurezza',score:null,items:[{label:b.note.trim(),value:'',note:''}]});
+  buildPdfReport({
+    title:wk?'Briefing Settimanale':'Briefing Giornaliero',subtitle:b.cant,meta,sections,actions:null,photos:[],
+    footnote:'',target:'br-out',previewNote:'Briefing in PDF, pronto da inviare a squadre e direzione',
+    filenamePrefix:`${b.data}_Briefing-${wk?'Settimanale':'Giornaliero'}_${b.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`,
+    onBlob:(blob,fn)=>{brLast={blob,fn,k:b.k,upd:b.upd};}
+  });
+  return true;
+}
+function brFresh(){const b=brCur(false);return b&&brLast&&brLast.k===b.k&&brLast.upd===b.upd;}
+async function brShare(){
+  const b=brCur(false);if(!brOk(b))return;
+  if(!brFresh()&&!brPdf())return;
+  const f=new File([brLast.blob],brLast.fn,{type:'application/pdf'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:brLast.fn.replace('.pdf',''),text:brText(b)});return;}
+  }catch(e){if(e&&e.name==='AbortError')return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=brLast.fn;document.body.appendChild(a);a.click();a.remove();
+  toast('Condivisione diretta non disponibile: PDF scaricato, allegalo a mail o messaggio');
+}
+function brMail(){
+  const b=brCur(false);if(!brOk(b))return;
+  const em=brSelected().map(c=>c.email).filter(Boolean);
+  if(!em.length){toast('Nessun destinatario con email selezionato');return;}
+  if(!brFresh())brPdf();
+  const subj=(b.tipo==='s'?'Briefing settimanale':'Briefing giornaliero')+' - '+b.cant+' - '+(b.tipo==='s'?'sett. dal '+prFmtD(b.data):prFmtD(b.data));
+  const body=brText(b)+'\n\n(PDF in allegato)';
+  location.href='mailto:'+em.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body.slice(0,1800));
+  toast('Allega il PDF scaricato alla mail');
+}
+function brWa(){
+  const b=brCur(false);if(!brOk(b))return;
+  window.open('https://wa.me/?text='+encodeURIComponent(brText(b)),'_blank');
+}
+
+// ── REPORT AUTOMATICI SETTIMANALI / MENSILI (dai rapporti giornalieri e dal registro presenze) ──
+function snapSave(cant,data,o){
+  if(!cant||!data)return;
+  const ck=prKey(cant);
+  PR.snap[ck+'|'+data]=Object.assign({ck,cant,data,ts:new Date().toISOString()},o);
+  prSave();
+}
+function arInit(){
+  const t=prToday();
+  pe('ar-data').value=t;pe('ar-yy').value=t.slice(0,4);
+  pe('ar-mm').innerHTML=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'].map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  pe('ar-mm').value=String(+t.slice(5,7));
+  arTipo('s');
+}
+function arTipo(t){
+  pe('ar-tipo').value=t;
+  pe('ar-tg-s').classList.toggle('active',t==='s');pe('ar-tg-m').classList.toggle('active',t==='m');
+  pe('ar-row-s').style.display=t==='s'?'flex':'none';pe('ar-row-m').style.display=t==='m'?'flex':'none';
+}
+function arRange(){
+  if(pe('ar-tipo').value==='s'){const d=pe('ar-data').value||prToday(),dal=brMon(d);return{dal,al:brAdd(dal,6),tipo:'s'};}
+  const y=+pe('ar-yy').value||new Date().getFullYear(),m=+pe('ar-mm').value;
+  return{dal:`${y}-${String(m).padStart(2,'0')}-01`,al:brIso(new Date(y,m,0)),tipo:'m'};
+}
+function autoRep(){
+  const cant=gv('ar-cantiere')||gv('g-cantiere');
+  if(!cant){toast('Inserisci il cantiere');return;}
+  const ck=prKey(cant),R=arRange(),dest=gv('rep-dest');
+  const days={};const D=d=>days[d]=days[d]||{data:d,recs:[],snap:null};
+  PR.records.forEach(r=>{if(r.ck===ck&&!r.ann&&r.data>=R.dal&&r.data<=R.al)D(r.data).recs.push(r);});
+  Object.values(PR.snap).forEach(s=>{if(s.ck===ck&&s.data>=R.dal&&s.data<=R.al)D(s.data).snap=s;});
+  const list=Object.values(days).sort((a,b)=>a.data.localeCompare(b.data));
+  if(!list.length){toast('Nessun dato per questo cantiere e periodo (presenze o rapporti giornalieri)');return;}
+  const dm=iso=>{const p=iso.split('-');return p[2]+'/'+p[1];};
+  const dw=iso=>['lun','mar','mer','gio','ven','sab','dom'][brDow(iso)];
+  const mins=rs=>rs.reduce((s,r)=>s+(prNet(r)||0),0);
+  const allRecs=[].concat(...list.map(d=>d.recs));
+  const workersPd=allRecs.filter(r=>prTipo(r.tipo).w).length;
+  const nSnap=list.filter(d=>d.snap).length;
+
+  const meteoC={};list.forEach(d=>{const m=d.snap&&d.snap.meteo;if(m)meteoC[m]=(meteoC[m]||0)+1;});
+  const meteoTxt=Object.keys(meteoC).map(k=>k+' x'+meteoC[k]).join(', ');
+  const pcts=list.filter(d=>d.snap&&d.snap.total).map(d=>d.snap.done/d.snap.total*100);
+  const periodo=R.tipo==='s'?`dal ${prFmtD(R.dal)} al ${prFmtD(R.al)}`:brPd(R.dal).toLocaleDateString('it-IT',{month:'long',year:'numeric'})+` (${prFmtD(R.dal)} - ${prFmtD(R.al)})`;
+  const meta=[['Destinatario',dest],['Cantiere',cant],['Periodo',periodo],
+    ['Giornate in cantiere',String(list.length)],['Rapporti giornalieri',`${nSnap} su ${list.length} giornate`],
+    ['Presenze',`${allRecs.length} persone-giorno (${workersPd} operai-giorno) - ${prFmtH(mins(allRecs))} complessive`]];
+  if(workersPd&&list.length)meta.push(['Operai medi',(workersPd/list.length).toFixed(1).replace('.',',')]);
+  if(meteoTxt)meta.push(['Meteo',meteoTxt]);
+  if(pcts.length)meta.push(['Check-list media',Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length)+'%']);
+
+  const sections=[];
+  sections.push({title:'Riepilogo giornaliero',score:null,items:[],table:{
+    head:['Data','Meteo','Operai','Ore','Lavorazioni'],widths:[24,30,14,16,94],
+    rows:list.map(d=>[dw(d.data)+' '+dm(d.data),d.snap&&d.snap.meteo?d.snap.meteo+(d.snap.temp?' '+d.snap.temp+'°C':''):'—',String(d.recs.filter(r=>prTipo(r.tipo).w).length),prFmtH(mins(d.recs)),(d.snap&&d.snap.lav)||'—'])}});
+  const byI={};allRecs.forEach(r=>{const k=prKey(r.impresa);const g=byI[k]=byI[k]||{l:String(r.impresa||'').trim()||'—',days:new Set(),pd:0,m:0};g.days.add(r.data);g.pd++;g.m+=prNet(r)||0;});
+  sections.push({title:'Presenze per impresa',score:null,items:[],table:{head:['Impresa / ente','Giorni','Persone-giorno','Ore'],widths:[98,24,32,24],
+    rows:Object.values(byI).sort((a,b)=>b.m-a.m).map(g=>[g.l,String(g.days.size),String(g.pd),prFmtH(g.m)])}});
+  const byP={};allRecs.forEach(r=>{const k=prKey(r.nome)+'|'+prKey(r.impresa);const g=byP[k]=byP[k]||{n:r.nome,i:r.impresa,days:new Set(),m:0};g.days.add(r.data);g.m+=prNet(r)||0;});
+  sections.push({title:'Presenze per nominativo',score:null,items:[],table:{head:['Nominativo','Impresa / ente','Giorni','Ore'],widths:[62,66,24,26],
+    rows:Object.values(byP).sort((a,b)=>String(a.i).localeCompare(String(b.i))||a.n.localeCompare(b.n)).map(g=>[g.n,g.i||'—',String(g.days.size),prFmtH(g.m)])}});
+
+  const an={title:'Anomalie, note e segnalazioni',score:null,items:[]};
+  list.forEach(d=>{
+    ((d.snap&&d.snap.iss)||[]).forEach(x=>an.items.push({label:`${dm(d.data)} - ${x.s}: ${x.v} [${x.st==='✕'?'NON OK':'ATTENZIONE'}]`,value:'',note:x.n||''}));
+    if(d.snap&&d.snap.note)an.items.push({label:`${dm(d.data)} - Note del giorno: ${d.snap.note}`,value:'',note:''});
+    d.recs.forEach(r=>{
+      if(r.tess==='no')an.items.push({label:`${dm(d.data)} - ${r.nome}: tessera di riconoscimento non esposta`,value:'',note:''});
+      if(r.note)an.items.push({label:`${dm(d.data)} - ${r.nome}: ${r.note}`,value:'',note:''});
+    });
+  });
+  if(!an.items.length)an.items.push({label:'Nessuna anomalia o nota registrata nel periodo.',value:'',note:''});
+  sections.push(an);
+
+  const co={title:'Completezza dei dati',score:null,items:[]};
+  const noSnap=list.filter(d=>!d.snap).map(d=>dm(d.data)),noRec=list.filter(d=>!d.recs.length).map(d=>dm(d.data));
+  const open=list.filter(d=>d.recs.length&&!PR.locks[prLk(ck,d.data)]).map(d=>dm(d.data));
+  if(noSnap.length)co.items.push({label:'Giornate senza rapporto giornaliero generato (lavorazioni e meteo non disponibili): '+noSnap.join(', '),value:'',note:''});
+  if(noRec.length)co.items.push({label:'Giornate senza presenze nel registro: '+noRec.join(', '),value:'',note:''});
+  if(open.length)co.items.push({label:'Registro presenze non ancora chiuso nelle giornate: '+open.join(', '),value:'',note:''});
+  if(!co.items.length)co.items.push({label:'Tutte le giornate hanno rapporto giornaliero e registro presenze chiuso.',value:'',note:''});
+  sections.push(co);
+
+  const now=new Date(),nm=R.tipo==='s'?'Settimanale':'Mensile';
+  buildPdfReport({
+    title:'Report '+nm,subtitle:cant+' - '+periodo,meta,sections,actions:null,photos:[],
+    footnote:'Report generato automaticamente aggregando i rapporti giornalieri e il registro presenze memorizzati dall\'app. Le giornate prive di rapporto giornaliero compaiono solo con i dati del registro presenze.',
+    target:'ar-out',previewNote:'Report generato dai rapporti giornalieri',
+    filenamePrefix:`${now.toISOString().slice(0,10)}_${nm}-auto_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`
+  });
+}
 
 window.addEventListener('DOMContentLoaded',init);
 document.addEventListener('change',saveState);
