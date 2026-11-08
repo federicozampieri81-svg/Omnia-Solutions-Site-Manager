@@ -535,6 +535,7 @@ textarea.br-in{resize:vertical;min-height:44px}
     <div class="rep-sel" style="margin:10px 0"><button class="rep-btn active" id="ar-tg-s" onclick="arTipo('s')">Settimanale</button><button class="rep-btn" id="ar-tg-m" onclick="arTipo('m')">Mensile</button></div>
     <div class="form-row" id="ar-row-s"><div class="form-lbl">Settimana del</div><input class="form-inp" id="ar-data" type="date"></div>
     <div class="form-row" id="ar-row-m"><div class="form-lbl">Mese</div><select class="form-inp" id="ar-mm" style="flex:1"></select><input class="form-inp" id="ar-yy" type="number" min="2020" max="2100" style="max-width:80px"></div>
+    <textarea class="note" id="ar-note" placeholder="Considerazioni del site manager sul periodo (facoltative, finiscono nella sintesi)" style="min-height:60px"></textarea>
     <div class="btn-row" style="margin-top:12px"><button class="btn btn-green" onclick="autoRep()">Genera report automatico</button></div>
     <div id="ar-out" class="rep-out" style="display:none"></div>
   </div>
@@ -2474,6 +2475,21 @@ function autoRep(){
   if(pcts.length)meta.push(['Check-list media',Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length)+'%']);
 
   const sections=[];
+  const sy={title:'Sintesi del periodo',score:null,items:[]};
+  const wpd=list.map(d=>({d:d.data,n:d.recs.filter(r=>prTipo(r.tipo).w).length}));
+  const pk=wpd.reduce((a,b)=>b.n>a.n?b:a,wpd[0]);
+  sy.items.push({label:`Nel periodo ${periodo} sono state registrate ${list.length} ${list.length===1?'giornata':'giornate'} di lavoro, con ${workersPd&&list.length?(workersPd/list.length).toFixed(1).replace('.',','):'0'} operai in media${pk&&pk.n?` (massimo ${pk.n} il ${dm(pk.d)})`:''} e ${prFmtH(mins(allRecs))} complessive.`,value:'',note:''});
+  const lavMap={};list.forEach(d=>{const t=d.snap&&d.snap.lav;if(!t)return;t.split(/\n|;/).map(x=>x.trim()).filter(Boolean).forEach(x=>{const k=x.toLowerCase();(lavMap[k]=lavMap[k]||{l:x,d:[]}).d.push(dm(d.data));});});
+  const lvs=Object.values(lavMap);
+  sy.items.push({label:lvs.length?'Lavorazioni svolte: '+lvs.map(x=>x.l+' ('+x.d.join(', ')+')').join('; ')+'.':'Lavorazioni non disponibili: nessun rapporto giornaliero generato nel periodo.',value:'',note:''});
+  const imps=[...new Set(allRecs.map(r=>String(r.impresa||'').trim()).filter(Boolean))];
+  if(imps.length)sy.items.push({label:'Imprese presenti: '+imps.join(', ')+'.',value:'',note:''});
+  const bad=list.filter(d=>d.snap&&/piogg|neve|temporal|grandin|ghiacc|vento forte/i.test(d.snap.meteo||'')).map(d=>dm(d.data));
+  if(bad.length)sy.items.push({label:`Giornate con meteo avverso: ${bad.length} (${bad.join(', ')}).`,value:'',note:''});
+  const nIss=list.reduce((s,d)=>s+((d.snap&&d.snap.iss)||[]).length,0),nTess=allRecs.filter(r=>r.tess==='no').length;
+  sy.items.push({label:(nIss||nTess)?`Segnalazioni: ${nIss} voci di check-list da attenzionare, ${nTess} ${nTess===1?"tessera non esposta":"tessere non esposte"} (dettaglio nelle pagine seguenti).`:'Nessuna anomalia o segnalazione registrata nel periodo.',value:'',note:''});
+  const xn=gv('ar-note');if(xn)sy.items.push({label:xn,value:'',note:''});
+  sections.push(sy);
   sections.push({title:'Riepilogo giornaliero',score:null,items:[],table:{
     head:['Data','Meteo','Operai','Ore','Lavorazioni'],widths:[24,30,14,16,94],
     rows:list.map(d=>[dw(d.data)+' '+dm(d.data),d.snap&&d.snap.meteo?d.snap.meteo+(d.snap.temp?' '+d.snap.temp+'°C':''):'—',String(d.recs.filter(r=>prTipo(r.tipo).w).length),prFmtH(mins(d.recs)),(d.snap&&d.snap.lav)||'—'])}});
