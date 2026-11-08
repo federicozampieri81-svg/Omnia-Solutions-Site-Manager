@@ -2208,7 +2208,7 @@ const brLong=iso=>{const s=brPd(iso).toLocaleDateString('it-IT',{weekday:'long',
 const brKey=()=>prKey(BRX.cant)+'|'+BRX.tipo+'|'+BRX.data;
 function brCur(create){
   const k=brKey();let b=PR.briefs[k];
-  if(!b&&create){b=PR.briefs[k]={k,ck:prKey(BRX.cant),cant:BRX.cant,tipo:BRX.tipo,data:BRX.data,sq:[],att:[],mat:[],note:'',upd:new Date().toISOString()};}
+  if(!b&&create){b=PR.briefs[k]={k,ck:prKey(BRX.cant),cant:BRX.cant,tipo:BRX.tipo,data:BRX.data,sq:[],att:[],mat:[],note:'',todo:'',upd:new Date().toISOString()};}
   return b;
 }
 function brTouch(b){b.upd=new Date().toISOString();b.cant=BRX.cant||b.cant;prSave();}
@@ -2236,14 +2236,14 @@ function brCtx(){
 }
 function brEdit(a,id,f,v,lid){
   const b=brCur(true);
-  if(a==='note'){b.note=v;}
+  if(a==='note'){b.note=v;}else if(a==='todo'){b.todo=v;}
   else{let o=b[a].find(x=>x.id===id);if(o&&lid)o=o.lav.find(x=>x.id===lid);if(o)o[f]=v;}
   brTouch(b);
 }
 function brAddItem(a,id){
   const b=brCur(true);
-  if(a==='sq')b.sq.push({id:brUid(),nome:'',capo:'',lav:[{id:brUid(),giorno:'0',testo:'',istr:''}]});
-  else if(a==='lav'){const s=b.sq.find(x=>x.id===id);if(s)s.lav.push({id:brUid(),giorno:'0',testo:'',istr:''});}
+  if(a==='sq')b.sq.push({id:brUid(),nome:'',capo:'',lav:[{id:brUid(),giorno:'0',testo:'',luogo:'',chi:'',istr:''}]});
+  else if(a==='lav'){const s=b.sq.find(x=>x.id===id);if(s)s.lav.push({id:brUid(),giorno:'0',testo:'',luogo:'',chi:'',istr:''});}
   else if(a==='att')b.att.push({id:brUid(),testo:'',qta:'',per:'',entro:'',prio:'normale'});
   else if(a==='mat')b.mat.push({id:brUid(),testo:'',qta:'',entro:'',note:''});
   brTouch(b);brRender();
@@ -2257,7 +2257,7 @@ function brDel(a,id,lid){
 function brReset(){
   const b=brCur(false);if(!b)return;
   if(!confirm('Azzerare questo briefing (lavorazioni, attrezzature, materiali, note)?'))return;
-  b.sq=[];b.att=[];b.mat=[];b.note='';brTouch(b);brRender();toast('Briefing azzerato');
+  b.sq=[];b.att=[];b.mat=[];b.note='';b.todo='';brTouch(b);brRender();toast('Briefing azzerato');
 }
 function brRender(){
   const el=pe('br-body');if(!el)return;
@@ -2268,6 +2268,8 @@ function brRender(){
   const desc=wk?`Settimana dal ${prFmtD(BRX.data)} al ${prFmtD(brAdd(BRX.data,5))} (lun-sab)`:brLong(BRX.data||brDefDate('g'));
   let h=`<div class="pr-alert info"><b>${wk?'Briefing settimanale':'Briefing giornaliero'}</b><br>${esc(desc)}</div>`;
 
+  h+=`<div class="sec-lbl">Note generali per tutte le squadre</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Raccomandazioni valide per tutti (pulizia, DPI, viabilità, elementi finiti da non danneggiare, meteo...)" oninput="brEdit('note',null,null,this.value)">${esc(b.note||'')}</textarea></div>`;
+  h+=`<div class="sec-lbl">Da fare - Site manager (una voce per riga)</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Es. Controllo ferri solaio prima del getto" oninput="brEdit('todo',null,null,this.value)">${esc(b.todo||'')}</textarea></div>`;
   h+=`<div class="sec-lbl">Lavorazioni concordate con le squadre</div>`;
   h+=b.sq.map(s=>`<div class="card">
     <div class="br-it"><div class="br-h"><b>Squadra</b>${X('Rimuovi squadra',`brDel('sq','${s.id}')`)}</div>
@@ -2276,6 +2278,7 @@ function brRender(){
     ${s.lav.map((l,i)=>`<div class="br-it"><div class="br-h"><span class="pr-tag">Lavorazione ${i+1}</span>${X('Rimuovi',`brDel('lav','${s.id}','${l.id}')`)}</div>
       ${wk?`<select class="br-in" style="margin-top:6px" onchange="brEdit('sq','${s.id}','giorno',this.value,'${l.id}')">${BR_GG.map((g,k)=>`<option value="${k}"${String(l.giorno||'0')===String(k)?' selected':''}>${g}</option>`).join('')}</select>`:''}
       <div style="margin-top:6px">${T(l.testo,'Cosa si fa (es. Montaggio telai asse C, piano 1)',`brEdit('sq','${s.id}','testo',this.value,'${l.id}')`)}</div>
+      <div class="br-g">${I(l.luogo,'Dove (livello / zona, es. Piano 1 - Monte)',`brEdit('sq','${s.id}','luogo',this.value,'${l.id}')`)}${I(l.chi,'Chi (operatore / referente)',`brEdit('sq','${s.id}','chi',this.value,'${l.id}')`)}</div>
       <div style="margin-top:6px">${T(l.istr,'Istruzioni chiare: come, con quali mezzi, sicurezza, punti di attenzione',`brEdit('sq','${s.id}','istr',this.value,'${l.id}')`)}</div></div>`).join('')}
     <div class="br-it"><span class="pill" onclick="brAddItem('lav','${s.id}')">+ Aggiungi lavorazione</span></div></div>`).join('');
   h+=`<div class="btn-row" style="margin-top:0;margin-bottom:6px"><button class="btn btn-ghost btn-sm" onclick="brAddItem('sq')">+ Aggiungi squadra</button></div>`;
@@ -2294,7 +2297,6 @@ function brRender(){
     <div style="margin-top:6px">${I(m.note,'Note (fornitore, specifiche, ordine già fatto...)',`brEdit('mat','${m.id}','note',this.value)`)}</div></div>`).join('');
   h+=`<div class="br-it"><span class="pill" onclick="brAddItem('mat')">+ Aggiungi materiale</span></div></div>`;
 
-  h+=`<div class="sec-lbl">Note generali e sicurezza</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Raccomandazioni valide per tutti (viabilità, DPI, aree interdette, meteo...)" oninput="brEdit('note',null,null,this.value)">${esc(b.note||'')}</textarea></div>`;
   el.innerHTML=h;
 }
 
@@ -2337,12 +2339,15 @@ function brText(b){
   L.push((wk?'BRIEFING SETTIMANALE':'BRIEFING GIORNALIERO')+' - '+b.cant);
   L.push(wk?`Settimana dal ${prFmtD(b.data)} al ${prFmtD(brAdd(b.data,5))}`:brLong(b.data));
   const comp=gv('p-compilatore');if(comp)L.push('Preparato da: '+comp);
+  if((b.note||'').trim()){L.push('');L.push('NOTE GENERALI PER TUTTE LE SQUADRE');L.push(b.note.trim());}
+  const td=(b.todo||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  if(td.length){L.push('');L.push('DA FARE - SITE MANAGER');td.forEach((x,i)=>L.push((i+1)+'. '+x));}
   L.push('');L.push('LAVORAZIONI');
   b.sq.forEach(s=>{
     const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
     L.push('');L.push('> '+(s.nome||'Squadra')+(s.capo?' (ref. '+s.capo+')':''));
     ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach((l,i)=>{
-      L.push(`${i+1}. ${wk&&+l.giorno?'['+BR_GG[+l.giorno]+'] ':''}${l.testo.trim()}`);
+      L.push(`${i+1}. ${wk&&+l.giorno?'['+BR_GG[+l.giorno]+'] ':''}${l.testo.trim()}${l.luogo?' - '+l.luogo:''}${l.chi?' ('+l.chi+')':''}`);
       if(l.istr.trim())L.push('   Istruzioni: '+l.istr.trim());
     });
   });
@@ -2350,7 +2355,6 @@ function brText(b){
   if(at.length){L.push('');L.push('ATTREZZATURE MANCANTI');at.forEach(a=>L.push('- '+(a.prio==='urgente'?'[URGENTE] ':'')+a.testo+(a.qta?' x '+a.qta:'')+(a.per?' ('+a.per+')':'')+(a.entro?' entro '+prFmtD(a.entro):'')));}
   const ma=b.mat.filter(m=>m.testo.trim());
   if(ma.length){L.push('');L.push('MATERIALI DA ORDINARE / NECESSARI');ma.forEach(m=>L.push('- '+m.testo+(m.qta?' x '+m.qta:'')+(m.entro?' entro '+prFmtD(m.entro):'')+(m.note?' - '+m.note:'')));}
-  if((b.note||'').trim()){L.push('');L.push('NOTE E SICUREZZA');L.push(b.note.trim());}
   return L.join('\n');
 }
 function brPdf(){
@@ -2361,14 +2365,17 @@ function brPdf(){
   const comp=gv('p-compilatore');if(comp)meta.push(['Preparato da',comp]);
   meta.push(['Emesso il',now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})]);
   const sections=[];
+  if((b.note||'').trim())sections.push({title:'Note generali per tutte le squadre',score:null,items:[{label:b.note.trim(),value:'',note:''}]});
+  const td=(b.todo||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  if(td.length)sections.push({title:'Da fare - Site manager',score:null,items:td.map((x,i)=>({label:x,value:'',note:''}))});
   const lav={title:'Lavorazioni concordate con le squadre',score:null,items:[]};
   const rows=[];let n=0;
   b.sq.forEach(s=>{
     const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
     rows.push({group:(s.nome||'Squadra')+(s.capo?'  -  Referente: '+s.capo:'')});
-    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.istr.trim()||'—']));
+    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']));
   });
-  if(rows.length)lav.table=wk?{head:['N.','Giorno','Lavorazione','Istruzioni operative'],widths:[8,26,58,86],rows}:{head:['N.','Lavorazione','Istruzioni operative'],widths:[8,70,100],rows};
+  if(rows.length)lav.table=wk?{head:['N.','Giorno','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,22,36,26,22,64],rows}:{head:['N.','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,44,30,26,70],rows};
   else lav.items.push({label:'Nessuna lavorazione inserita.',value:'',note:''});
   sections.push(lav);
   const at=b.att.filter(a=>a.testo.trim());
@@ -2381,9 +2388,8 @@ function brPdf(){
   if(ma.length)sm.table={head:['N.','Materiale','Quantita','Necessario entro','Note'],widths:[8,62,26,28,54],rows:ma.map((m,i)=>[String(i+1),m.testo,m.qta||'—',m.entro?prFmtD(m.entro):'—',m.note||'—'])};
   else sm.items.push({label:'Nessun materiale da ordinare segnalato.',value:'',note:''});
   sections.push(sm);
-  if((b.note||'').trim())sections.push({title:'Note generali e sicurezza',score:null,items:[{label:b.note.trim(),value:'',note:''}]});
   buildPdfReport({
-    title:wk?'Briefing Settimanale':'Briefing Giornaliero',subtitle:b.cant,meta,sections,actions:null,photos:[],
+    title:wk?'Briefing Capisquadra - Settimanale':'Briefing Capisquadra - Giornaliero',subtitle:b.cant,meta,sections,actions:null,photos:[],
     footnote:'',target:'br-out',previewNote:'Briefing in PDF, pronto da inviare a squadre e direzione',
     filenamePrefix:`${b.data}_Briefing-${wk?'Settimanale':'Giornaliero'}_${b.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`,
     onBlob:(blob,fn)=>{brLast={blob,fn,k:b.k,upd:b.upd};}
