@@ -589,7 +589,18 @@ giornaliera:[
     {id:"g-q2",testo:"Nessuna NCR (non conformità) aperta e non gestita"},
     {id:"g-q3",testo:"Fasi critiche pre-chiusura verificate",sub:"Es. impianti prima di chiudere le pareti"}
   ]},
-  {id:"g-note",titolo:"Note del giorno",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Problemi emersi, decisioni prese, visite ispettori o DL..."}
+  {id:"g-n-att",titolo:"Note - Attività del site manager",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Sopralluoghi, controlli eseguiti, riunioni e coordinamento svolti..."},
+  {id:"g-n-disp",titolo:"Note - Disposizioni date",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"A chi (squadra / impresa) e su cosa..."},
+  {id:"g-n-com",titolo:"Note - Comunicazioni inviate e ricevute",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Data, mittente / destinatario, mezzo (mail, PEC, telefono), oggetto..."},
+  {id:"g-n-cons",titolo:"Note - Consegne e materiali",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa è arrivato, DDT, quantità, accettato o respinto..."},
+  {id:"g-n-pezzi",titolo:"Pezzi montati (marche e lotti)",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Marca / codice, lotto o colata, posizione di montaggio..."},
+  {id:"g-n-mezzi",titolo:"Note - Mezzi e attrezzature",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Mezzi di sollevamento e noleggi in cantiere, guasti, attrezzature mancanti..."},
+  {id:"g-n-acq",titolo:"Note - Acquisti e spese non previste",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa, perché, importo, chi ha autorizzato..."},
+  {id:"g-n-vis",titolo:"Note - Visite e verifiche",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Committente, DL, coordinatore sicurezza, enti, collaudi, prove..."},
+  {id:"g-n-sic",titolo:"Note - Sicurezza e ambiente",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Infortuni o quasi-incidenti, non conformità, stato delle opere provvisionali..."},
+  {id:"g-n-imp",titolo:"Note - Impedimenti e ritardi",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Causa, durata, squadra coinvolta (solo fatti, con ora e nomi)..."},
+  {id:"g-n-dom",titolo:"Note - Da fare domani",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Punti aperti da riprendere nel briefing..."},
+  {id:"g-note",titolo:"Altre note del giorno",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Altro: decisioni prese, osservazioni non classificabili sopra..."}
 ],
 settimanale:[
   {id:"s-avanzamento",titolo:"Avanzamento e programma",icona:"chart",colore:"t-green",voci:[
@@ -1266,14 +1277,17 @@ function genReport(){
       title:sec.titolo,score:null,
       items:sec.voci.map(v=>({label:v.testo+(v.sub?' — '+v.sub:''),value:getStatoPill(v.id)||'—',note:getNoteV(v.id)}))
     }));
+    const nx={};CHECKLISTS.giornaliera.filter(s=>s.tipo==='note').forEach(sec=>{const t=getSecNote(sec.id);if(t)nx[sec.id]=t;});
     const iss=[];CHECKLISTS.giornaliera.filter(s=>!s.tipo).forEach(sec=>sec.voci.forEach(v=>{const st=getStatoPill(v.id);if(st==='⚠'||st==='✕')iss.push({s:sec.titolo,v:v.testo,st,n:getNoteV(v.id)});}));
-    snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),foto:(photos.giornaliera||[]).length});
+    snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),nx:nx,foto:(photos.giornaliera||[]).length});
     const pr=prPdf(gv('g-cantiere'),data||prToday());
     meta.push(...pr.meta);
     sections=[...pr.sections,...sections];
     if(pr.has)footnote="Registro presenze tenuto ai fini di sicurezza e gestione del cantiere (D.Lgs. 81/2008 artt. 18 e 26; L. 136/2010 art. 5). Dati personali trattati ai sensi del Reg. UE 2016/679. Il sigillo SHA-256 attesta l'integrità del registro al momento della chiusura della giornata; non sostituisce la firma elettronica qualificata e la marca temporale.";
-    const noteSec=getSecNote('g-note');
-    if(noteSec)sections.push({title:'Note del giorno',score:null,items:[{label:noteSec,value:'',note:''}]});
+    CHECKLISTS.giornaliera.filter(s=>s.tipo==='note').forEach(sec=>{
+      const t=getSecNote(sec.id);
+      if(t)sections.push({title:sec.titolo.replace(/^Note - /,''),score:null,items:t.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({label:x,value:'',note:''}))});
+    });
   }else{
     cadKey=currentRepType;
     cant=gv(cadKey[0]+'-cantiere')||'[cantiere]';
@@ -2504,6 +2518,8 @@ function autoRep(){
   list.forEach(d=>{
     ((d.snap&&d.snap.iss)||[]).forEach(x=>an.items.push({label:`${dm(d.data)} - ${x.s}: ${x.v} [${x.st==='✕'?'NON OK':'ATTENZIONE'}]`,value:'',note:x.n||''}));
     if(d.snap&&d.snap.note)an.items.push({label:`${dm(d.data)} - Note del giorno: ${d.snap.note}`,value:'',note:''});
+    const nx=(d.snap&&d.snap.nx)||{};
+    [['g-n-imp','Impedimenti e ritardi'],['g-n-acq','Acquisti e spese non previste'],['g-n-sic','Sicurezza e ambiente']].forEach(([k,l])=>{if(nx[k])an.items.push({label:`${dm(d.data)} - ${l}: ${nx[k].replace(/\s*\n\s*/g,'; ')}`,value:'',note:''});});
     d.recs.forEach(r=>{
       if(r.tess==='no')an.items.push({label:`${dm(d.data)} - ${r.nome}: tessera di riconoscimento non esposta`,value:'',note:''});
       if(r.note)an.items.push({label:`${dm(d.data)} - ${r.nome}: ${r.note}`,value:'',note:''});
@@ -2511,6 +2527,8 @@ function autoRep(){
   });
   if(!an.items.length)an.items.push({label:'Nessuna anomalia o nota registrata nel periodo.',value:'',note:''});
   sections.push(an);
+  const pz=list.filter(d=>d.snap&&d.snap.nx&&d.snap.nx['g-n-pezzi']);
+  if(pz.length)sections.push({title:'Pezzi montati nel periodo',score:null,items:pz.map(d=>({label:dm(d.data)+' - '+d.snap.nx['g-n-pezzi'].replace(/\s*\n\s*/g,'; '),value:'',note:''}))});
 
   const co={title:'Completezza dei dati',score:null,items:[]};
   const noSnap=list.filter(d=>!d.snap).map(d=>dm(d.data)),noRec=list.filter(d=>!d.recs.length).map(d=>dm(d.data));
