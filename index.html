@@ -492,6 +492,15 @@ textarea.br-in{resize:vertical;min-height:44px}
 </div>
 
 <div class="pane" id="pane-storico">
+  <div class="sec-lbl">Report salvati su Drive</div>
+  <div class="card">
+    <div class="br-it"><input class="br-in" id="dv-q" placeholder="Cerca (es. Giornaliero, Asiago, 2026-11)" oninput="dvRender()"></div>
+    <div id="dv-list"><div class="hist-empty">Accedi a Google Drive per vedere i report salvati.</div></div>
+  </div>
+  <div id="dv-out" class="rep-out" style="display:none;margin-bottom:12px"></div>
+  <div class="btn-row" style="margin-top:0"><button class="btn btn-ghost" onclick="dvLoad(true)">Aggiorna elenco</button></div>
+  <div class="sec-lbl">Giornate registrate (riapribili per correzioni)</div>
+  <div class="card" id="rd-list"></div>
   <div class="sec-lbl">Documenti su Google Drive</div>
   <div class="card">
     <div style="padding:12px 14px;border-bottom:.5px solid var(--sep2);display:flex;align-items:center;gap:8px">
@@ -929,6 +938,7 @@ function showPane(name){
   const idx=order.indexOf(name);
   if(name==='presenze'&&typeof prRender==='function')prRender();
   if(name==='briefing'&&typeof brShow==='function')brShow();
+  if(name==='storico'&&typeof rdRender==='function'){rdRender();dvLoad();}
   if(idx>=0)document.querySelectorAll('.tab')[idx]?.classList.add('active');
 }
 
@@ -1262,7 +1272,7 @@ function getCnt(cad){const cont=document.getElementById('sections-'+cad);if(!con
 
 function genReport(){
   const dest=gv('rep-dest'),noteX=gv('rep-note');
-  const now=new Date();
+  const now=new Date();let revSuf='',embedObj=null;
   const titMap={giornaliero:'Rapporto Giornaliero',settimanale:'Report Settimanale',quindicinale:'Report Quindicinale',mensile:'Report Mensile'};
   let cant,meta,sections,cadKey,footnote='';
 
@@ -1279,7 +1289,9 @@ function genReport(){
     }));
     const nx={};CHECKLISTS.giornaliera.filter(s=>s.tipo==='note').forEach(sec=>{const t=getSecNote(sec.id);if(t)nx[sec.id]=t;});
     const iss=[];CHECKLISTS.giornaliera.filter(s=>!s.tipo).forEach(sec=>sec.voci.forEach(v=>{const st=getStatoPill(v.id);if(st==='⚠'||st==='✕')iss.push({s:sec.titolo,v:v.testo,st,n:getNoteV(v.id)});}));
-    snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),nx:nx,foto:(photos.giornaliera||[]).length});
+    const sv=snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),nx:nx,foto:(photos.giornaliera||[]).length,form:gFormGet()});
+    if(sv.rev>0){const f1=new Date(sv.first);meta.splice(3,0,['Revisione',`Rev. ${sv.rev} del ${now.toLocaleDateString('it-IT')} ${now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})} - prima emissione ${f1.toLocaleDateString('it-IT')} ${f1.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`]);revSuf='_rev'+sv.rev;}
+    embedObj={k:'gg',cant:gv('g-cantiere'),data,f:gFormGet(),rev:sv.rev,first:sv.first};
     const pr=prPdf(gv('g-cantiere'),data||prToday());
     meta.push(...pr.meta);
     sections=[...pr.sections,...sections];
@@ -1313,7 +1325,8 @@ function genReport(){
     actions:null,
     photos:photos[cadKey]||[],
     footnote,
-    filenamePrefix:`${now.toISOString().slice(0,10)}_${tm[currentRepType]}_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`
+    filenamePrefix:`${now.toISOString().slice(0,10)}_${tm[currentRepType]}_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}${revSuf}`,
+    embed:embedObj
   });
 }
 
@@ -1336,9 +1349,10 @@ function pdfSafe(s){
     .replace(/[^\n -~¡-ÿ€‘’“”•–—…]/g,'');
 }
 
-function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePrefix,footnote,target:tgt,previewNote,onBlob}){
+function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePrefix,footnote,target:tgt,previewNote,onBlob,embed}){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
+  if(embed){try{doc.setProperties({title:title+' - '+(subtitle||''),subject:'Omnia Solution - Site Manager',keywords:'OSM1:'+btoa(unescape(encodeURIComponent(JSON.stringify(embed))))});}catch(e){}}
   const _text=doc.text.bind(doc),_split=doc.splitTextToSize.bind(doc);
   doc.text=(t,...a)=>_text(pdfSafe(t),...a);
   doc.splitTextToSize=(t,...a)=>_split(pdfSafe(t),...a);
@@ -1597,6 +1611,7 @@ async function uploadPdfToDrive(blob,filename){
     setDriveStatus('ok','salvato ✓');
     const type = filename.includes('Briefing')?'Briefing':filename.includes('Sopralluogo')?'Sopralluogo':filename.includes('Giornaliero')?'Giornaliero':filename.includes('Settimanale')?'Settimanale':filename.includes('Quindicinale')?'Quindicinale':'Mensile';
     addHist(filename,type,data.webViewLink||FOLDER_URL,new Date().toISOString());
+    dvFiles=null;
     toast('Salvato su Google Drive ✓');
   }catch(e){
     setDriveStatus('error','errore upload');
@@ -2143,7 +2158,7 @@ function prMerge(s){
   const mr=new Set(PR.rub.map(c=>c.id));
   (s.rub||[]).forEach(c=>{if(c&&c.id&&!tomb.has(c.id)&&!mr.has(c.id)){PR.rub.push(c);n++;}});
   PR.rub=PR.rub.filter(c=>!tomb.has(c.id));
-  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();}}
+  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();rdRender();}}
   return n;
 }
 async function prDriveSync(){
@@ -2407,6 +2422,7 @@ function brPdf(){
     title:wk?'Briefing Capisquadra - Settimanale':'Briefing Capisquadra - Giornaliero',subtitle:b.cant,meta,sections,actions:null,photos:[],
     footnote:'',target:'br-out',previewNote:'Briefing in PDF, pronto da inviare a squadre e direzione',
     filenamePrefix:`${b.data}_Briefing-${wk?'Settimanale':'Giornaliero'}_${b.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`,
+    embed:{k:'br',b},
     onBlob:(blob,fn)=>{brLast={blob,fn,k:b.k,upd:b.upd};}
   });
   return true;
@@ -2439,10 +2455,120 @@ function brWa(){
 
 // ── REPORT AUTOMATICI SETTIMANALI / MENSILI (dai rapporti giornalieri e dal registro presenze) ──
 function snapSave(cant,data,o){
-  if(!cant||!data)return;
-  const ck=prKey(cant);
-  PR.snap[ck+'|'+data]=Object.assign({ck,cant,data,ts:new Date().toISOString()},o);
-  prSave();
+  if(!cant||!data)return{rev:0};
+  const ck=prKey(cant),k=ck+'|'+data,old=PR.snap[k];
+  const ro=(!old&&window.GREOPEN&&GREOPEN.k===k)?GREOPEN:null;
+  const sig=x=>JSON.stringify(Object.assign({},x,{ts:0,rev:0,first:0}));
+  const nw=Object.assign({ck,cant,data,ts:new Date().toISOString()},o);
+  if(old&&sig(old)===sig(nw)){return{rev:old.rev||0,first:old.first||old.ts};}   // nessuna modifica: stessa revisione
+  nw.rev=old?(old.rev||0)+1:(ro?(ro.rev||0)+1:0);nw.first=old?(old.first||old.ts):(ro?ro.first:nw.ts);
+  if(ro)window.GREOPEN=null;
+  PR.snap[k]=nw;prSave();rdRender();
+  return{rev:nw.rev,first:nw.first};
+}
+// ── RIAPRI GIORNATA: salva e ripristina tutti i campi del tab Oggi (foto escluse) ──
+function gPillVid(p){return p.closest('.row')?.querySelector('input')?.id?.replace('chk-','');}
+function gFormGet(){
+  const f={cant:gv('g-cantiere'),data:gv('g-data'),meteo:gv('g-meteo'),temp:gv('g-temp'),lav:gv('g-lavorazioni'),cb:{},ta:{},pills:{}};
+  const cont=document.getElementById('sections-giornaliera');if(!cont)return f;
+  cont.querySelectorAll('input[type=checkbox]').forEach(c=>{if(c.checked)f.cb[c.id]=1;});
+  cont.querySelectorAll('textarea').forEach(t=>{if(t.value)f.ta[t.id]=t.value;});
+  cont.querySelectorAll('.pill.sel').forEach(p=>{const vid=gPillVid(p);if(vid)f.pills[vid]=[...p.classList].find(c=>c.startsWith('p-'));});
+  return f;
+}
+function gFormSet(f){
+  [['g-cantiere','cant'],['g-data','data'],['g-meteo','meteo'],['g-temp','temp'],['g-lavorazioni','lav']].forEach(([id,k])=>{const el=pe(id);if(el)el.value=f[k]||'';});
+  const cont=document.getElementById('sections-giornaliera');if(!cont)return;
+  cont.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=!!(f.cb&&f.cb[c.id]);});
+  cont.querySelectorAll('textarea').forEach(t=>{t.value=(f.ta&&f.ta[t.id])||'';});
+  cont.querySelectorAll('.pill.sel').forEach(p=>p.classList.remove('sel'));
+  Object.keys(f.pills||{}).forEach(vid=>{const row=document.getElementById('row-'+vid);if(!row)return;const b=row.querySelector('.'+f.pills[vid]);if(b)b.classList.add('sel');});
+  CHECKLISTS.giornaliera.forEach(sec=>{if(!sec.tipo)updateBadge(sec.id);});
+  saveState();
+}
+// ── ELENCO REPORT SU DRIVE (apri / riapri per modifica) ──
+let dvFiles=null,dvBusy=false,DV={};
+const dvTypeOf=n=>n.includes('Briefing')?'Briefing':n.includes('Sopralluogo')?'Sopralluogo':n.includes('Giornaliero')?'Giornaliero':n.includes('Settimanale')?'Settimanale':n.includes('Quindicinale')?'Quindicinale':n.includes('Mensile')?'Mensile':'Altro';
+async function dvLoad(force){
+  const el=pe('dv-list');if(!el)return;
+  if(!gAccessToken){el.innerHTML='<div class="hist-empty">Accedi a Google Drive per vedere i report salvati.</div>';return;}
+  if(dvBusy||(dvFiles&&!force))return;
+  dvBusy=true;el.innerHTML='<div class="hist-empty">Caricamento elenco da Drive...</div>';
+  try{
+    const q=encodeURIComponent("'"+FOLDER_ID+"' in parents and trashed=false and mimeType='application/pdf'");
+    let all=[],tok='';
+    do{
+      const r=await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy=createdTime%20desc&pageSize=200&fields='+encodeURIComponent('nextPageToken,files(id,name,createdTime,size)')+(tok?'&pageToken='+tok:''));
+      const j=await r.json();all=all.concat(j.files||[]);tok=j.nextPageToken||'';
+    }while(tok&&all.length<600);
+    dvFiles=all;dvRender();
+  }catch(e){el.innerHTML='<div class="hist-empty">Elenco non disponibile: '+esc(e.message)+'</div>';}
+  finally{dvBusy=false;}
+}
+function dvRender(){
+  const el=pe('dv-list');if(!el||!dvFiles)return;
+  const q=(gv('dv-q')||'').toLowerCase();
+  const tc={'Giornaliero':'var(--blue-bg)','Settimanale':'var(--green-bg)','Quindicinale':'var(--orange-bg)','Mensile':'var(--purple-bg)','Sopralluogo':'var(--red-bg)','Briefing':'var(--yellow-bg)'};
+  const L=dvFiles.filter(f=>f.name!==PR_BK_NAME&&(!q||f.name.toLowerCase().includes(q)));
+  el.innerHTML=L.length?L.map(f=>{const d=new Date(f.createdTime),t=dvTypeOf(f.name);
+    return `<div class="hist-row" style="cursor:pointer" onclick="dvOpen('${f.id}')" ondblclick="dvOpen('${f.id}',true)"><span class="hist-type" style="background:${tc[t]||'var(--fill)'}">${t}</span><span class="hist-name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(f.name.replace('.pdf',''))}</span><span style="color:var(--label2);font-size:12px;flex-shrink:0">${d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})}</span></div>`;}).join(''):'<div class="hist-empty">Nessun report trovato.</div>';
+}
+async function dvRead(id){
+  const r=await prDrv('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media');
+  const buf=await r.arrayBuffer();
+  const s=new TextDecoder('latin1').decode(buf);
+  const m=s.match(/\/Keywords\s*\(OSM1:([A-Za-z0-9+\/=]+)\)/);
+  let emb=null;if(m){try{emb=JSON.parse(decodeURIComponent(escape(atob(m[1]))));}catch(e){}}
+  return{blob:new Blob([buf],{type:'application/pdf'}),emb};
+}
+async function dvOpen(id,edit){
+  const f=(dvFiles||[]).find(x=>x.id===id);if(!f)return;
+  toast('Apertura di '+f.name.replace('.pdf','')+'...');
+  try{
+    const r=await dvRead(id);DV={id,name:f.name,emb:r.emb};
+    const url=URL.createObjectURL(r.blob);
+    showPdfPreview('dv-out',url,f.name,'Salvato su Drive');
+    const out=pe('dv-out');
+    out.insertAdjacentHTML('beforeend',r.emb&&(r.emb.k==='gg'||r.emb.k==='br')
+      ?`<div style="margin-top:10px"><button class="btn btn-green" onclick="dvReopen()">Riapri per modificare</button></div>`
+      :`<div style="margin-top:10px;font-size:13px;color:var(--label2)">Questo PDF non contiene i dati originali (generato prima di questa funzione, oppure è un report automatico): solo consultazione. I report automatici si rigenerano dal tab Report.</div>`);
+    out.scrollIntoView({behavior:'smooth',block:'nearest'});
+    if(edit&&r.emb&&(r.emb.k==='gg'||r.emb.k==='br'))dvReopen();
+  }catch(e){toast('Impossibile aprire: '+e.message);}
+}
+function dvReopen(){
+  const e=DV.emb;if(!e)return;
+  if(e.k==='gg'){
+    const hasPh=(photos.giornaliera||[]).length>0;
+    if(!confirm(`Riaprire la giornata del ${prFmtD(e.data)} (${e.cant}) nel tab Oggi?\n\nI dati attuali del tab Oggi verranno sostituiti${hasPh?' e le foto caricate rimosse':''}. Le foto del rapporto non sono nel salvataggio: dovrai ricaricarle.`))return;
+    photos.giornaliera=[];renderPhotos('giornaliera');savePhotos();
+    gFormSet(e.f);
+    window.GREOPEN={k:prKey(e.cant)+'|'+e.data,rev:e.rev||0,first:e.first||new Date().toISOString()};
+    showPane('giornaliera');
+    toast('Giornata riaperta: correggi e rigenera il rapporto (Report > Giornaliero)');
+  }else if(e.k==='br'){
+    const b=e.b;if(!b||!b.k)return;
+    if(PR.briefs[b.k]&&!confirm('Esiste già un briefing per questa data: sostituirlo con quello del PDF?'))return;
+    b.upd=new Date().toISOString();PR.briefs[b.k]=b;prSave();
+    BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+    pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;brLbl();
+    showPane('briefing');brRender();
+    toast('Briefing riaperto: modifica e rigenera il PDF');
+  }
+}
+function rdRender(){
+  const el=pe('rd-list');if(!el)return;
+  const L=Object.values(PR.snap).filter(s=>s.form).sort((a,b)=>(b.data+b.ts).localeCompare(a.data+a.ts)).slice(0,40);
+  el.innerHTML=L.length?L.map(s=>{const t=new Date(s.ts);return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(prFmtD(s.data))}</b> · ${esc(s.cant)}<div style="font-size:12px;color:var(--label2)">${s.rev?'Rev. '+s.rev+' · ':''}ultima emissione ${t.toLocaleDateString('it-IT')} ${t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</div></div><button class="br-x" style="color:var(--blue)" onclick="rdOpen('${esc(s.ck+'|'+s.data)}')">Riapri</button></div>`;}).join(''):`<div class="br-it" style="color:var(--label2);font-size:14px">Nessuna giornata registrata: compaiono qui dopo aver generato un Rapporto Giornaliero.</div>`;
+}
+function rdOpen(k){
+  const s=PR.snap[k];if(!s||!s.form){toast('Giornata non riapribile');return;}
+  const hasPh=(photos.giornaliera||[]).length>0;
+  if(!confirm(`Riaprire la giornata del ${prFmtD(s.data)} (${s.cant}) nel tab Oggi?\n\nI dati attuali del tab Oggi verranno sostituiti${hasPh?' e le foto caricate rimosse':''}. Le foto della giornata non sono salvate: dovrai ricaricarle.`))return;
+  photos.giornaliera=[];renderPhotos('giornaliera');savePhotos();
+  gFormSet(s.form);
+  showPane('giornaliera');
+  toast('Giornata riaperta: correggi e rigenera il rapporto (Report > Giornaliero)');
 }
 function arInit(){
   const t=prToday();
