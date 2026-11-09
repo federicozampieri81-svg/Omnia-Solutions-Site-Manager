@@ -1913,7 +1913,7 @@ async function prLock(){
   PR.log.push({k,ts:lock.ts,az:'chiusa',by:comp,hash:lock.hash});
   prSave();prRender();
   prBackup(true);prPushNow();
-  toast('Giornata chiusa e sigillata ✓ Copia scaricata'+(gAccessToken?' e salvata su Drive':'. Accedi a Drive per salvarla anche online'));
+  toast('Giornata chiusa e sigillata ✓'+(gAccessToken?'':' Accedi a Drive per salvare il backup online (ora scaricato)'));
 }
 function prUnlock(){
   const c=prCtx(),k=prLk(c.ck,c.data),l=PR.locks[k];if(!l)return;
@@ -2030,8 +2030,42 @@ function prCsv(){
   rs.forEach(r=>lines.push([prFmtD(r.data),r.cant,r.nome,r.impresa,r.qual,prTipo(r.tipo).l,r.ing,r.usc,r.pausa,prFmtH(prNet(r)),{si:'Sì',no:'No',na:'N/A'}[r.tess],r.note,r.ann?'ANNULLATA '+prFmtTs(r.ann.ts):'Valida'].map(q).join(';')));
   prDownload('﻿'+lines.join('\r\n'),`Presenze_${prSafe(c.cant)}.csv`,'text/csv;charset=utf-8');
 }
-function prBackup(quiet){
-  prDownload(JSON.stringify(PR,null,1),`Backup-registro-presenze_${prToday()}.json`,'application/json');
+const PR_BKDIR='Backup registro presenze';
+let prBkDirId=null;
+async function prBkFolder(){
+  if(prBkDirId)return prBkDirId;
+  const q=encodeURIComponent("name='"+PR_BKDIR+"' and mimeType='application/vnd.google-apps.folder' and '"+FOLDER_ID+"' in parents and trashed=false");
+  const r=await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&pageSize=1&fields=files(id)');
+  const j=await r.json();
+  if(j.files&&j.files[0])return prBkDirId=j.files[0].id;
+  const c=await prDrv('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:PR_BKDIR,mimeType:'application/vnd.google-apps.folder',parents:[FOLDER_ID]})});
+  return prBkDirId=(await c.json()).id;
+}
+async function prBackupDrive(name,json){
+  const dir=await prBkFolder();
+  const q=encodeURIComponent("name='"+name+"' and '"+dir+"' in parents and trashed=false");
+  const f=await (await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&pageSize=1&fields=files(id)')).json();
+  if(f.files&&f.files[0]){
+    await prDrv('https://www.googleapis.com/upload/drive/v3/files/'+f.files[0].id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:json});
+  }else{
+    const fd=new FormData();
+    fd.append('metadata',new Blob([JSON.stringify({name,parents:[dir],mimeType:'application/json'})],{type:'application/json'}));
+    fd.append('file',new Blob([json],{type:'application/json'}));
+    await prDrv('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:fd});
+  }
+}
+// Backup del registro: su Drive (cartella "Backup registro presenze") se collegato, altrimenti scarica il file
+async function prBackup(quiet){
+  const name=`Backup-registro-presenze_${prToday()}.json`,json=JSON.stringify(PR,null,1);
+  if(gAccessToken){
+    try{
+      await prBackupDrive(name,json);
+      prBk.fileVer=prBk.ver;prBkRender();
+      toast('Backup salvato su Drive: '+PR_BKDIR);
+      return;
+    }catch(e){toast('Backup su Drive non riuscito ('+e.message+'): scarico il file');}
+  }
+  prDownload(json,name,'application/json');
   prBk.fileVer=prBk.ver;prBkRender();
   if(!quiet)toast('Backup scaricato');
 }
