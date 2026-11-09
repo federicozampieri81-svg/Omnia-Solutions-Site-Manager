@@ -1270,6 +1270,14 @@ function getNoteV(vid){const el=document.getElementById('note-'+vid);return el&&
 function getSecNote(sid){const el=document.getElementById(sid+'-note');return el&&el.value.trim()?el.value.trim():'';}
 function getCnt(cad){const cont=document.getElementById('sections-'+cad);if(!cont)return{total:0,done:0};const all=cont.querySelectorAll('input[type=checkbox]');return{total:all.length,done:[...all].filter(i=>i.checked).length};}
 
+// Data di riferimento del report (quella scritta nel report), usata nel nome del file
+function repFileDate(){
+  const iso=/^\d{4}-\d{2}-\d{2}$/;
+  if(currentRepType==='giornaliero'){const d=gv('g-data');return iso.test(d)?d:prToday();}
+  if(currentRepType==='settimanale'){const d=gv('s-dal');return iso.test(d)?d:prToday();}
+  if(currentRepType==='mensile'){const d=gv('m-mese');return /^\d{4}-\d{2}$/.test(d)?d:prToday();}
+  return prToday();
+}
 function genReport(){
   const dest=gv('rep-dest'),noteX=gv('rep-note');
   const now=new Date();let revSuf='',embedObj=null;
@@ -1325,7 +1333,7 @@ function genReport(){
     actions:null,
     photos:photos[cadKey]||[],
     footnote,
-    filenamePrefix:`${now.toISOString().slice(0,10)}_${tm[currentRepType]}_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}${revSuf}`,
+    filenamePrefix:`${repFileDate()}_${tm[currentRepType]}_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}${revSuf}`,
     embed:embedObj
   });
 }
@@ -1912,7 +1920,7 @@ async function prLock(){
   lock.hash=await prHash(c.ck,c.data);
   PR.log.push({k,ts:lock.ts,az:'chiusa',by:comp,hash:lock.hash});
   prSave();prRender();
-  prBackup(true);prPushNow();
+  prBackup(true,c.data);prPushNow();
   toast('Giornata chiusa e sigillata ✓'+(gAccessToken?'':' Accedi a Drive per salvare il backup online (ora scaricato)'));
 }
 function prUnlock(){
@@ -1983,7 +1991,7 @@ function prActionsHtml(c,d){
   let h='';
   if(d.lock)h+=b('Riapri giornata','prUnlock()')+b('Verifica integrità','prVerify()');
   else h+=b('Chiudi giornata','prLock()','btn-green');
-  h+=b('Esporta CSV','prCsv()')+b('Backup','prBackup()')+b('Importa','pe(\'pr-import\').click()');
+  h+=b('Esporta CSV','prCsv()')+b('Backup','prBackup(false)')+b('Importa','pe(\'pr-import\').click()');
   h+='<input type="file" id="pr-import" accept="application/json,.json" onchange="prImport(this)">';
   return h;
 }
@@ -2055,8 +2063,8 @@ async function prBackupDrive(name,json){
   }
 }
 // Backup del registro: su Drive (cartella "Backup registro presenze") se collegato, altrimenti scarica il file
-async function prBackup(quiet){
-  const name=`Backup-registro-presenze_${prToday()}.json`,json=JSON.stringify(PR,null,1);
+async function prBackup(quiet,data){
+  const name=`Backup-registro-presenze_${(typeof data==='string'&&data)||(prCtx().data)||prToday()}.json`,json=JSON.stringify(PR,null,1);
   if(gAccessToken){
     try{
       await prBackupDrive(name,json);
@@ -2704,7 +2712,7 @@ function autoRep(){
     title:'Report '+nm,subtitle:cant+' - '+periodo,meta,sections,actions:null,photos:[],
     footnote:'Report generato automaticamente aggregando i rapporti giornalieri e il registro presenze memorizzati dall\'app. Le giornate prive di rapporto giornaliero compaiono solo con i dati del registro presenze.',
     target:'ar-out',previewNote:'Report generato dai rapporti giornalieri',
-    filenamePrefix:`${now.toISOString().slice(0,10)}_${nm}-auto_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`
+    filenamePrefix:`${R.tipo==='m'?R.dal.slice(0,7):R.dal}_${nm}-auto_${cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`
   });
 }
 
