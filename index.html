@@ -2166,11 +2166,12 @@ async function prDrv(url,opt){
   if(!r.ok){const e=new Error('Drive ha risposto '+r.status);e.status=r.status;throw e;}
   return r;
 }
-async function prFind(){
-  const q=encodeURIComponent("name='"+PR_BK_NAME+"' and '"+FOLDER_ID+"' in parents and trashed=false");
-  const r=await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy='+encodeURIComponent('modifiedTime desc')+'&pageSize=1&fields='+encodeURIComponent('files(id,modifiedTime)'));
+// Cerca il backup ovunque (anche se spostato in una sottocartella): tutti i file con quel nome creati dall'app
+async function prFindAll(){
+  const q=encodeURIComponent("name='"+PR_BK_NAME+"' and trashed=false");
+  const r=await prDrv('https://www.googleapis.com/drive/v3/files?q='+q+'&orderBy='+encodeURIComponent('modifiedTime desc')+'&pageSize=20&fields='+encodeURIComponent('files(id,modifiedTime,parents)'));
   const j=await r.json();
-  return (j.files&&j.files[0])||null;
+  return j.files||[];
 }
 // Unisce i dati di un backup a quelli locali senza mai perdere nulla (voci uguali: vince la più completa)
 function prMerge(s){
@@ -2207,12 +2208,18 @@ async function prDriveSync(){
   if(!gAccessToken||prBk.busy)return;
   prBk.busy=true;prBk.err='';prBkRender();
   try{
-    const f=await prFind();
-    if(f){
-      prBk.fileId=f.id;
-      const r=await prDrv('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media');
-      const j=await r.json(),n=prMerge(j.data||j);
-      if(n){prRender();toast('Registro presenze ripristinato da Drive ('+n+' voci)');}
+    const fl=await prFindAll();
+    if(fl.length){
+      // si scrive sul file nella cartella dei report, altrimenti sul più recente
+      prBk.fileId=(fl.find(x=>(x.parents||[]).includes(FOLDER_ID))||fl[0]).id;
+      let tot=0;
+      for(const f of fl){
+        try{
+          const r=await prDrv('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media');
+          const j=await r.json();tot+=prMerge(j.data||j);
+        }catch(e){if(f.id===prBk.fileId)throw e;}
+      }
+      if(tot){prRender();toast('Registro presenze ripristinato da Drive ('+tot+' voci)');}
     }
     prBk.pulled=true;
     await prDrivePush();
