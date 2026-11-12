@@ -55,6 +55,12 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;background:var(--bg
 .nav-inner{display:flex;align-items:center;padding:14px 16px 12px;gap:10px}
 .nav-title{font-size:17px;font-weight:600;letter-spacing:-.3px;flex:1;display:flex;align-items:center;gap:7px}
 .nav-logo{height:24px;width:auto;display:block;flex:none}
+.theme-tg{position:relative;width:46px;height:26px;border-radius:13px;border:.5px solid var(--sep);background:var(--fill2);padding:0;cursor:pointer;flex:none;-webkit-appearance:none;appearance:none}
+.theme-knob{position:absolute;top:1.5px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;transition:transform .22s cubic-bezier(.25,.46,.45,.94),background .22s;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.theme-knob img{width:17px;height:auto;display:block}
+:root[data-dark="1"] .theme-knob{transform:translateX(20px);background:#2c2c2f}
+:root[data-dark="1"] .theme-knob img{filter:invert(1)}
+@media(max-width:390px){.nav-sub{display:none}}
 .nav-sub{font-size:14px;font-weight:300;letter-spacing:.6px;color:var(--label2);border-left:1px solid var(--sep);padding-left:9px;line-height:1.2;white-space:nowrap}
 body::before{content:"";position:fixed;inset:0;z-index:120;pointer-events:none;background:url(logo.png) center 52%/min(80vw,600px) auto no-repeat;opacity:.055}
 @media(prefers-color-scheme:dark){.nav-logo{filter:invert(1)}body::before{filter:invert(1);opacity:.07}.btn-blue{color:#111}.auth-icon svg,.t-blue .sec-ico svg{filter:invert(1)}}
@@ -253,6 +259,27 @@ textarea.br-in{resize:vertical;min-height:44px}
 @media print{.nav,.tabs,.btn-row,.sc-btns,.sco-na,.toggle-desc,.desc-grid{display:none!important}.pane{display:block!important}#pane-giornaliera,#pane-presenze,#pane-settimanale,#pane-quindicinale,#pane-mensile,#pane-report,#pane-storico{display:none!important}#pane-sopralluogo{display:block!important;padding:0}body{font-size:12px}}
 @media(max-width:600px){.score-num{font-size:62px}.tab{min-width:58px}.tab-lbl{font-size:8.5px}.bar-lbl{width:64px}.sco .l{display:none}}
 </style>
+<script>
+// Tema chiaro / scuro / automatico (segue il dispositivo). Le regole scure del CSS vengono attivate o disattivate qui.
+(function(){
+  var KEY='smTheme',DK=null,mq=window.matchMedia('(prefers-color-scheme:dark)');
+  function mode(){try{return localStorage.getItem(KEY)||'auto';}catch(e){return 'auto';}}
+  window.themeMode=mode;
+  window.themeDark=function(){var m=mode();return m==='dark'||(m==='auto'&&mq.matches);};
+  window.themeSet=function(m){try{if(m==='auto')localStorage.removeItem(KEY);else localStorage.setItem(KEY,m);}catch(e){}window.themeApply();};
+  window.themeApply=function(){
+    var m=mode();
+    if(DK===null){DK=[];try{for(var i=0;i<document.styleSheets.length;i++){var rs=document.styleSheets[i].cssRules||[];for(var j=0;j<rs.length;j++){var r=rs[j];if(r.media&&/prefers-color-scheme:\s*dark/.test(r.media.mediaText))DK.push([r,r.media.mediaText]);}}}catch(e){}}
+    DK.forEach(function(x){try{x[0].media.mediaText=m==='dark'?'all':m==='light'?'not all':x[1];}catch(e){}});
+    document.documentElement.style.colorScheme=m==='auto'?'':m;
+    var dk=window.themeDark(),tc=document.querySelector('meta[name=theme-color]');if(tc)tc.setAttribute('content',dk?'#0F0F10':'#F3F1EE');
+    document.documentElement.setAttribute('data-dark',dk?'1':'0');
+    if(typeof renderRadar==='function'){try{renderRadar();}catch(e){}}
+  };
+  window.themeApply();
+  try{mq.addEventListener('change',function(){if(mode()==='auto')window.themeApply();});}catch(e){}
+})();
+</script>
 </head>
 <body>
 
@@ -261,6 +288,7 @@ textarea.br-in{resize:vertical;min-height:44px}
     <div class="nav-title">
       <img class="nav-logo" src="logo.png" alt="Omnia Solutions"><span class="nav-sub">Site Manager</span>
     </div>
+    <button class="theme-tg" id="theme-tg" aria-label="Tema chiaro o scuro" title="Tocca: chiaro / scuro. Tieni premuto: automatico" onclick="themeToggle()"><span class="theme-knob"><img src="o-ring.png" alt=""></span></button>
     <div class="nav-badge" onclick="showPane('storico')">
       <div class="drv-dot" id="drv-dot"></div>
       <span id="drv-txt">Drive</span>
@@ -1162,12 +1190,21 @@ function renderBars(){
     cont.innerHTML+=`<div class="bar-row"><div class="bar-lbl">${sec.titolo}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${col}"></div></div><div class="bar-val" style="color:${col}">${m>0?p+'%':'—'}</div></div>`;
   });
 }
+let themeLP=null,themeLong=false;
+function themeToggle(){if(themeLong){themeLong=false;return;}themeSet(themeDark()?'light':'dark');}
+(function(){
+  const b=document.getElementById('theme-tg');if(!b)return;
+  const start=()=>{themeLong=false;clearTimeout(themeLP);themeLP=setTimeout(()=>{themeLong=true;themeSet('auto');toast('Tema automatico (segue il dispositivo)');},700);};
+  const stop=()=>clearTimeout(themeLP);
+  b.addEventListener('pointerdown',start);['pointerup','pointerleave','pointercancel'].forEach(e=>b.addEventListener(e,stop));
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+})();
 function renderRadar(){
   const cv=document.getElementById('sp-radar');if(!cv)return;
   const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
   const cx=W/2,cy=H/2+10,r=Math.min(W,H)*.36,n=SP_SEZIONI.length;
   const ang=SP_SEZIONI.map((_,i)=>Math.PI*2*i/n-Math.PI/2);
-  const dk=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const dk=themeDark();
   const gc=dk?'rgba(255,255,255,.10)':'rgba(0,0,0,.07)';
   const dc=dk?'rgba(201,201,207,.85)':'rgba(63,63,68,.85)';
   const fc=dk?'rgba(201,201,207,.14)':'rgba(63,63,68,.09)';
