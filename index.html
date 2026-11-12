@@ -224,6 +224,11 @@ textarea.br-in{resize:vertical;min-height:44px}
 .cal-more{font-size:9px;color:var(--label2);text-align:center;margin-top:1px}
 .cal-pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .cal-sw{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0;box-shadow:0 0 0 1px var(--sep)}.cal-sw.on{border-color:var(--card);box-shadow:0 0 0 2.5px var(--label)}
+.cal-gs{min-width:max-content}.cal-gr{display:flex;border-top:1px solid var(--sep2);min-height:30px;align-items:stretch}
+.cal-gl{position:sticky;left:0;z-index:2;width:104px;flex:none;box-sizing:border-box;background:var(--card);padding:5px 6px;font-size:12px;font-weight:600;line-height:1.2;border-right:1px solid var(--sep);display:flex;align-items:center}
+.cal-gm{font-size:11px;font-weight:700;color:var(--label2);padding:3px 4px;box-sizing:border-box;border-left:1px solid var(--sep);overflow:hidden;white-space:nowrap}
+.cal-gd{flex:none;text-align:center;font-size:10px;line-height:1.1;padding:2px 0;display:flex;flex-direction:column;color:var(--label)}.cal-gd span{font-size:8px;color:var(--label3)}.cal-gd.sun,.cal-gd.sun b{color:var(--red)}.cal-gd.today b{background:var(--orange);color:#fff;border-radius:6px}
+.cal-gt{position:relative;flex:none;min-height:30px}.cal-gb{position:absolute;top:6px;height:18px;border-radius:4px}
 .cal-dot{width:16px;height:16px;border-radius:5px;flex:none}
 .br-x{background:none;border:none;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 0}
 .br-h{display:flex;justify-content:space-between;align-items:center}
@@ -393,6 +398,10 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div id="cal-wrap" style="display:none">
     <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere qui sopra: ogni cantiere ha il suo calendario.</div>
     <div class="card" style="padding:10px 8px">
+      <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;flex-wrap:wrap">
+        <div class="rep-sel" style="margin:0"><button class="rep-btn active" id="cal-vm" style="padding:6px 12px;font-size:13px" onclick="calVista('m')">Mese</button><button class="rep-btn" id="cal-vg" style="padding:6px 12px;font-size:13px" onclick="calVista('g')">Gantt</button></div>
+        <select id="cal-span" class="form-inp" style="display:none;flex:none;width:auto;font-size:13px" onchange="calSpan(this.value)"><option value="1">1 mese</option><option value="2">2 mesi</option><option value="3">3 mesi</option></select>
+      </div>
       <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px">
         <button class="rep-btn" onclick="calNav(-1)" aria-label="Mese precedente">‹</button>
         <div id="cal-title" style="flex:1;text-align:center;font-weight:700;font-size:17px"></div>
@@ -400,23 +409,25 @@ textarea.br-in{resize:vertical;min-height:44px}
         <button class="rep-btn" onclick="calNav(1)" aria-label="Mese successivo">›</button>
       </div>
       <div class="cal-g" id="cal-grid"></div>
+      <div id="cal-gantt" style="display:none;overflow-x:auto"></div>
     </div>
     <div id="cal-sel" style="margin-top:12px"></div>
-    <div class="sec-lbl">Attività e colore</div>
+    <div id="cal-ed"><div class="sec-lbl">Attività e colore</div>
     <div class="card" style="padding:12px 14px">
       <div id="cal-editbar" style="display:none;gap:8px;align-items:center;margin-bottom:10px"></div>
       <input class="br-in" id="cal-txt" list="cal-dl" autocomplete="off" placeholder="Es. Montaggio lamiere solaio" oninput="calTxtIn()">
       <datalist id="cal-dl"></datalist>
       <div class="cal-pal" id="cal-pal"></div>
       <button class="btn btn-blue" id="cal-apply" style="width:100%;margin-top:12px" onclick="calApply()">Applica ai giorni selezionati</button>
-    </div>
+    </div></div>
     <div id="cal-leg"></div>
+    <div id="cal-mat"></div>
     <div class="btn-row">
       <button class="btn btn-blue" onclick="calPdf()">Genera PDF</button>
       <button class="btn btn-green" onclick="calShare()">Condividi</button>
       <button class="btn btn-ghost" onclick="calMail()">Email</button>
       <button class="btn btn-ghost" onclick="calWa()">WhatsApp</button>
-      <button class="btn btn-ghost" onclick="calReset()">Svuota mese</button>
+      <button class="btn btn-ghost" id="cal-resetbtn" onclick="calReset()">Svuota mese</button>
     </div>
     <div id="cal-out" class="rep-out" style="display:none;margin-top:12px"></div>
     <div class="pr-alert info" style="margin-top:12px">Il calendario si salva da solo (anche nel backup su Drive). Per correggere basta riselezionare i giorni, usare Togli, Modifica o Elimina: non serve ricominciare. Il PDF mese è orizzontale e viene salvato anche su Drive.</div>
@@ -2584,7 +2595,7 @@ function calRender(){
   const has=!!BRX.cant;
   pe('cal-msg').style.display=has?'none':'block';
   pe('cal-title').textContent=CAL_MESI[CALX.m]+' '+CALX.y;
-  calGrid();calPal();calLeg();calSelUI();calEditBar();
+  calGrid();calGantt();calPal();calLeg();calSelUI();calEditBar();calVistaUI();calMatUI();
 }
 function calGrid(){
   const by=calByDay(),C=calData(),ck=calCk(),today=prToday();
@@ -2763,23 +2774,26 @@ function calBind(){
 }
 // testo per WhatsApp / mail
 function calText(){
-  const [a,b]=calMonthRange(),by=calByDay(),ck=calCk(),C=calData();
-  let t=`CALENDARIO LAVORI - ${BRX.cant}\n${CAL_MESI[CALX.m]} ${CALX.y}\n`;
+  const [a,b]=calRange(),by=calByDay(),ck=calCk(),C=calData();
+  let t=`${CALX.vista==='g'?'GANTT':'CALENDARIO'} LAVORI - ${BRX.cant}\n${calRangeLbl()}\n`;
   const gg=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
   for(let d=a;d<=b;d=brAdd(d,1)){
     const its=by[d]||[],nt=((C.nt[ck+'|'+d]||{}).t||'').trim();
     if(!its.length&&!nt)continue;
-    t+=`\n${gg[brDow(d)]} ${+d.slice(8)}: `+[...its.map(i=>i.t),...(nt?['('+nt+')']:[])].join(' + ');
+    t+=`\n${gg[brDow(d)]} ${+d.slice(8)}/${d.slice(5,7)}: `+[...its.map(i=>i.t),...(nt?['('+nt+')']:[])].join(' + ');
   }
+  const M=calMat(a,b),q=x=>'\n- '+x.t+(x.q?' ('+x.q+')':'')+(x.e?' - entro '+prFmtD(x.e):'')+(x.u?' - URGENTE':'');
+  if(M.mat.length)t+='\n\nMATERIALI DA ORDINARE'+M.mat.map(q).join('');
+  if(M.att.length)t+='\n\nATTREZZATURE MANCANTI'+M.att.map(q).join('');
   return t;
 }
 function calOk(){
   if(!BRX.cant){toast('Inserisci il cantiere');return false;}
-  const [a,b]=calMonthRange();
-  if(!calMine().some(i=>i.d>=a&&i.d<=b)){toast('Il mese non contiene attività');return false;}
+  const [a,b]=calRange();
+  if(!calMine().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
   return true;
 }
-function calPdf(){
+function calPdfMese(){
   if(!calOk())return false;
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'});
   const PW=297,PH=210,MX=10,[a,b]=calMonthRange(),by=calByDay(),ck=calCk(),C=calData();
@@ -2852,12 +2866,8 @@ function calPdf(){
       });
     });
   }
-  const n=doc.getNumberOfPages();
-  for(let i=1;i<=n;i++){
-    doc.setPage(i);doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-12,PW-MX,PH-12);
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(150,150,150);
-    doc.text('Generato da Site Manager - Omnia Solution',MX,PH-7.5);doc.text(`Pag. ${i}/${n}`,PW-MX,PH-7.5,{align:'right'});
-  }
+  {const M=calMat(a,b);if(M.mat.length||M.att.length)calPdfMat(doc,M,a,b);}
+  calFooters(doc);
   const blob=doc.output('blob');
   const fn=(a+'_Briefing-Calendario_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
   showPdfPreview('cal-out',URL.createObjectURL(blob),fn,'Calendario del mese in PDF (orizzontale, pronto da stampare o inviare)');
@@ -2865,7 +2875,7 @@ function calPdf(){
   uploadPdfToDrive(blob,fn);
   return true;
 }
-function calSig(){const [a,b]=calMonthRange();return BRX.cant+'|'+a+'|'+JSON.stringify(calMine().filter(i=>i.d>=a&&i.d<=b))+calText();}
+function calSig(){const [a,b]=calRange();return CALX.vista+'|'+BRX.cant+'|'+a+'|'+b+'|'+JSON.stringify(calMine().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calMat(a,b))+calText();}
 function calFresh(){return calLast&&calLast.sig===calSig();}
 async function calShare(){
   if(!calOk())return;if(!calFresh()&&!calPdf())return;
@@ -2884,6 +2894,145 @@ function calMail(){
   location.href='mailto:'+em.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('Calendario lavori - '+BRX.cant+' - '+CAL_MESI[CALX.m]+' '+CALX.y)+'&body='+encodeURIComponent((calText()+'\n\n(PDF in allegato)').slice(0,1800));
   toast('Allega il PDF scaricato alla mail');
 }
+
+// ── GANTT dal calendario + materiali/attrezzature dai briefing ────────────────
+CALX.vista='m';CALX.span=1;
+function calRange(){return CALX.vista==='g'?[brIso(new Date(CALX.y,CALX.m,1)),brIso(new Date(CALX.y,CALX.m+CALX.span,0))]:calMonthRange();}
+function calRangeLbl(){
+  const e=new Date(CALX.y,CALX.m+(CALX.vista==='g'?CALX.span-1:0),1);
+  return CAL_MESI[CALX.m]+' '+CALX.y+(e.getMonth()!==CALX.m?' - '+CAL_MESI[e.getMonth()]+' '+e.getFullYear():'');
+}
+function calVista(v){CALX.vista=v;calRender();}
+function calSpan(n){CALX.span=+n;calRender();}
+function calVistaUI(){
+  const g=CALX.vista==='g';
+  pe('cal-vm').classList.toggle('active',!g);pe('cal-vg').classList.toggle('active',g);
+  pe('cal-span').style.display=g?'':'none';pe('cal-span').value=String(CALX.span);
+  pe('cal-grid').style.display=g?'none':'';pe('cal-gantt').style.display=g?'':'none';
+  ['cal-sel','cal-ed','cal-leg','cal-resetbtn'].forEach(id=>{const e=pe(id);if(e)e.style.display=g?'none':'';});
+  pe('cal-title').textContent=g&&CALX.span>1?calRangeLbl():CAL_MESI[CALX.m]+' '+CALX.y;
+}
+function calGanttRows(a,b){
+  const m=new Map();
+  calMine().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
+  return [...m.values()].map(e=>{e.days.sort();e.runs=[];let s=e.days[0],p=s;
+    for(let n=1;n<=e.days.length;n++){const d=e.days[n];if(d&&d===brAdd(p,1)){p=d;continue;}e.runs.push([s,p]);s=d;p=d;}
+    return e;}).sort((x,y)=>x.days[0]<y.days[0]?-1:x.days[0]>y.days[0]?1:x.t.localeCompare(y.t));
+}
+const calDiff=(a,b)=>Math.round((brPd(b)-brPd(a))/864e5);
+function calGantt(){
+  const [a,b]=calRange(),rows=calGanttRows(a,b),n=calDiff(a,b)+1,cw=26,today=prToday(),k0=brDow(a);
+  const el=pe('cal-gantt');
+  if(!rows.length){el.innerHTML=`<div class="pr-alert info" style="margin:6px">Nessuna attività in questo periodo. Compilale nella vista Mese: il Gantt si ricava da lì.</div>`;return;}
+  let mh='',dh='';
+  for(let i=0;i<n;){const d=brAdd(a,i),dm=brPd(d).getMonth(),left=brIso(new Date(brPd(d).getFullYear(),dm+1,0)),len=Math.min(n-i,calDiff(d,left)+1);
+    mh+=`<div class="cal-gm" style="width:${len*cw}px">${CAL_MESI[dm]} ${brPd(d).getFullYear()}</div>`;i+=len;}
+  for(let i=0;i<n;i++){const d=brAdd(a,i),dw=brDow(d);
+    dh+=`<div class="cal-gd${dw===6?' sun':''}${d===today?' today':''}" style="width:${cw}px"><b>${+d.slice(8)}</b><span>${'LMMGVSD'[dw]}</span></div>`;}
+  const bg=`background-image:linear-gradient(90deg,transparent ${6*cw}px,rgba(128,128,128,.16) ${6*cw}px);background-size:${7*cw}px 100%;background-position:${-k0*cw}px 0`;
+  let h=`<div class="cal-gs"><div class="cal-gr" style="height:auto"><div class="cal-gl"></div><div><div style="display:flex">${mh}</div><div style="display:flex">${dh}</div></div></div>`;
+  h+=rows.map(r=>`<div class="cal-gr"><div class="cal-gl">${esc(r.t)}</div><div class="cal-gt" style="width:${n*cw}px;${bg}">${r.runs.map(([s,e])=>`<div class="cal-gb" title="${esc(r.t)} ${prFmtD(s)}${s!==e?' - '+prFmtD(e):''}" style="left:${calDiff(a,s)*cw+1}px;width:${(calDiff(s,e)+1)*cw-2}px;background:${r.c}"></div>`).join('')}</div></div>`).join('');
+  el.innerHTML=h+`</div>`;
+}
+// materiali e attrezzature dai briefing del cantiere nel periodo
+function calMat(a,b){
+  const ck=calCk(),mat=new Map(),att=new Map(),inR=d=>d&&d>=a&&d<=b;
+  Object.values(PR.briefs||{}).filter(x=>x.ck===ck).sort((x,y)=>(x.data<y.data?-1:1)).forEach(x=>{
+    const ok=e=>inR(x.data)||inR(e);
+    (x.mat||[]).forEach(m=>{if(!(m.testo||'').trim()||!ok(m.entro))return;const k=[m.testo.trim().toLowerCase(),(m.qta||'').trim().toLowerCase(),m.entro||''].join('|');if(!mat.has(k))mat.set(k,{t:m.testo.trim(),q:m.qta||'',e:m.entro||'',n:m.note||'',b:x.data});});
+    (x.att||[]).forEach(m=>{if(!(m.testo||'').trim()||!ok(m.entro))return;const k=[m.testo.trim().toLowerCase(),(m.qta||'').trim().toLowerCase(),m.entro||''].join('|');if(!att.has(k))att.set(k,{t:m.testo.trim(),q:m.qta||'',e:m.entro||'',p:m.per||'',u:m.prio==='urgente',b:x.data});});
+  });
+  const so=(x,y)=>(x.e||'9999')<(y.e||'9999')?-1:(x.e||'9999')>(y.e||'9999')?1:x.t.localeCompare(y.t);
+  return {mat:[...mat.values()].sort(so),att:[...att.values()].sort(so)};
+}
+function calMatUI(){
+  const el=pe('cal-mat');if(!el)return;
+  const [a,b]=calRange(),M=calMat(a,b);
+  const row=(x,att)=>`<div class="br-it"><div style="display:flex;gap:8px;align-items:baseline"><b style="flex:1;min-width:0">${esc(x.t)}${x.q?' · '+esc(x.q):''}</b>${x.u?'<span style="color:var(--red);font-size:12px;font-weight:700">URGENTE</span>':''}</div><div style="font-size:12px;color:var(--label2)">${[x.e?'entro '+prFmtD(x.e):'senza scadenza',att&&x.p?'per: '+esc(x.p):'',!att&&x.n?esc(x.n):'','dal briefing del '+prFmtD(x.b)].filter(Boolean).join(' · ')}</div></div>`;
+  let h=`<div class="sec-lbl">Materiali e attrezzature dai briefing (${esc(calRangeLbl())})</div>`;
+  if(!M.mat.length&&!M.att.length){el.innerHTML=h+`<div class="pr-alert info">Nessun materiale o attrezzatura nei briefing di questo periodo. Si inseriscono nel briefing giornaliero o settimanale e compaiono qui da soli.</div>`;return;}
+  h+=`<div class="card">`;
+  if(M.mat.length)h+=`<div class="br-it" style="font-weight:700;background:var(--fill)">Materiali da ordinare (${M.mat.length})</div>`+M.mat.map(x=>row(x,false)).join('');
+  if(M.att.length)h+=`<div class="br-it" style="font-weight:700;background:var(--fill)">Attrezzature mancanti (${M.att.length})</div>`+M.att.map(x=>row(x,true)).join('');
+  el.innerHTML=h+`</div>`;
+}
+function calPdfMat(doc,M,a,b){
+  const PW=297,PH=210,MX=10;let y=18;
+  doc.addPage('a4','landscape');
+  const head=t=>{doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text(t,MX,y);y+=7;};
+  const page=()=>{if(y>PH-22){doc.addPage('a4','landscape');y=18;}};
+  head('Materiali e attrezzature da procurare - '+pdfSafe(calRangeLbl()));
+  const tab=(title,cols,rows)=>{
+    if(!rows.length)return;
+    page();doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(60,60,65);doc.text(title,MX,y);y+=5;
+    let x=MX;doc.setFillColor(240,240,243);doc.rect(MX,y-3.6,PW-2*MX,5.6,'F');doc.setFontSize(8.5);doc.setTextColor(90,90,95);
+    cols.forEach(c=>{doc.text(c[0],x+1.5,y);x+=c[1];});y+=5;
+    rows.forEach(r=>{
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,35);
+      const cells=r.map((t,i)=>doc.splitTextToSize(pdfSafe(t)||'-',cols[i][1]-3)),h=Math.max(...cells.map(c=>c.length))*4.2+1.8;
+      if(y+h>PH-16){doc.addPage('a4','landscape');y=18;}
+      let xx=MX;cells.forEach((c,i)=>{doc.text(c,xx+1.5,y);xx+=cols[i][1];});
+      doc.setDrawColor(228,228,232);doc.setLineWidth(.15);doc.line(MX,y+h-3.4,PW-MX,y+h-3.4);y+=h;
+    });y+=4;
+  };
+  tab('Materiali da ordinare',[['Materiale',110],['Quantita',35],['Necessario entro',38],['Note',94]],M.mat.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',x.n]));
+  tab('Attrezzature mancanti',[['Attrezzatura',110],['Quantita',35],['Serve entro',38],['Per / priorita',94]],M.att.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',[x.p,x.u?'URGENTE':''].filter(Boolean).join(' - ')]));
+}
+function calFooters(doc){
+  const PW=297,PH=210,MX=10,n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){
+    doc.setPage(i);doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-12,PW-MX,PH-12);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(150,150,150);
+    doc.text('Generato da Site Manager - Omnia Solution',MX,PH-7.5);doc.text(`Pag. ${i}/${n}`,PW-MX,PH-7.5,{align:'right'});
+  }
+}
+function calPdfGantt(){
+  if(!BRX.cant){toast('Inserisci il cantiere');return false;}
+  const [a,b]=calRange(),rows=calGanttRows(a,b);
+  if(!rows.length){toast('Nessuna attività nel periodo');return false;}
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'});
+  const PW=297,PH=210,MX=10,LW=58,n=calDiff(a,b)+1,cw=(PW-2*MX-LW)/n,hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const rh=7.2,perPage=Math.floor((PH-16-40)/rh);
+  const fit=(s,w)=>{s=pdfSafe(s);if(doc.getTextWidth(s)<=w)return s;while(s.length>1&&doc.getTextWidth(s+'...')>w)s=s.slice(0,-1);return s.trimEnd()+'...';};
+  const first=brMon(a);
+  const pages=Math.ceil(rows.length/perPage);
+  for(let p=0;p<pages;p++){
+    if(p)doc.addPage('a4','landscape');
+    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(30,30,30);doc.text('Gantt lavori',MX,15);
+    doc.setFont('helvetica','normal');doc.setFontSize(12);doc.setTextColor(80,80,80);doc.text(pdfSafe(BRX.cant)+'  -  '+pdfSafe(calRangeLbl()),MX,21.5);
+    const comp=gv('p-compilatore');doc.setFontSize(9);
+    if(comp)doc.text(pdfSafe('Preparato da: '+comp),PW-MX,15,{align:'right'});
+    doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,21.5,{align:'right'});
+    const top=28,X0=MX+LW,R=rows.slice(p*perPage,(p+1)*perPage),H=top+13+R.length*rh;
+    // intestazione mesi e giorni
+    doc.setFillColor(240,240,243);doc.rect(MX,top,PW-2*MX,13,'F');
+    for(let i=0;i<n;){const d=brAdd(a,i),dm=brPd(d).getMonth(),left=brIso(new Date(brPd(d).getFullYear(),dm+1,0)),len=Math.min(n-i,calDiff(d,left)+1);
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(70,70,75);
+      doc.text(pdfSafe(CAL_MESI[dm]+' '+brPd(d).getFullYear()),X0+i*cw+1,top+4.2);
+      doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.line(X0+i*cw,top,X0+i*cw,H);i+=len;}
+    for(let i=0;i<n;i++){const d=brAdd(a,i),dw=brDow(d),x=X0+i*cw;
+      if(dw===6){doc.setFillColor(238,238,241);doc.rect(x,top+13,cw,H-top-13,'F');}
+      const show=cw>=3.1||dw===0||+d.slice(8)===1;
+      if(show){doc.setFont('helvetica','bold');doc.setFontSize(cw>=3.1?6.2:5.5);doc.setTextColor(...(dw===6?[200,40,40]:[60,60,65]));
+        doc.text(String(+d.slice(8)),x+cw/2,top+9,{align:'center'});
+        if(cw>=3.1){doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.text('LMMGVSD'[dw],x+cw/2,top+12,{align:'center'});}}
+    }
+    R.forEach((r,i)=>{
+      const y=top+13+i*rh;
+      doc.setDrawColor(222,222,226);doc.setLineWidth(.15);doc.line(MX,y+rh,PW-MX,y+rh);
+      doc.setFillColor(...hex(r.c));doc.roundedRect(MX+1,y+rh/2-1.7,3.4,3.4,.5,.5,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(35,35,40);doc.text(fit(r.t,LW-8),MX+6.5,y+rh/2+1.1);
+      r.runs.forEach(([s,e])=>{doc.setFillColor(...hex(r.c));doc.roundedRect(X0+calDiff(a,s)*cw+.15,y+1.4,(calDiff(s,e)+1)*cw-.3,rh-2.8,.7,.7,'F');});
+    });
+    doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.rect(MX,top,PW-2*MX,H-top);
+  }
+  const M=calMat(a,b);if(M.mat.length||M.att.length)calPdfMat(doc,M,a,b);
+  calFooters(doc);
+  const blob=doc.output('blob'),fn=(a+'_Briefing-Gantt_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
+  showPdfPreview('cal-out',URL.createObjectURL(blob),fn,'Gantt in PDF (orizzontale, pronto da stampare o inviare)');
+  calLast={blob,fn,sig:calSig()};uploadPdfToDrive(blob,fn);return true;
+}
+function calPdf(){return CALX.vista==='g'?calPdfGantt():calPdfMese();}
 
 // ── REPORT AUTOMATICI SETTIMANALI / MENSILI (dai rapporti giornalieri e dal registro presenze) ──
 function snapSave(cant,data,o){
