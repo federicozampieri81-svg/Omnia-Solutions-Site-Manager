@@ -245,6 +245,7 @@ textarea.br-in{resize:vertical;min-height:44px}
 .cal-gm{font-size:11px;font-weight:700;color:var(--label2);padding:3px 4px;box-sizing:border-box;border-left:1px solid var(--sep);overflow:hidden;white-space:nowrap}
 .cal-gd{flex:none;text-align:center;font-size:10px;line-height:1.1;padding:2px 0;display:flex;flex-direction:column;color:var(--label)}.cal-gd span{font-size:8px;color:var(--label3)}.cal-gd.sun,.cal-gd.sun b{color:var(--red)}.cal-gd.today b{background:var(--orange);color:#fff;border-radius:6px}
 .cal-gt{position:relative;flex:none;min-height:30px}.cal-gb{position:absolute;top:6px;height:18px;border-radius:4px}
+.rfi-st{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap}
 .cal-dot{width:16px;height:16px;border-radius:5px;flex:none}
 .br-x{background:none;border:none;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 0}
 .br-h{display:flex;justify-content:space-between;align-items:center}
@@ -267,39 +268,35 @@ textarea.br-in{resize:vertical;min-height:44px}
 </div>
 
 <div class="tabs" id="tabbar">
-  <div class="tab active" onclick="showPane('giornaliera')">
+  <div class="tab active" data-p="giornaliera" onclick="showPane('giornaliera')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg>
     <div class="tab-lbl">Oggi</div>
   </div>
-  <div class="tab" onclick="showPane('presenze')">
+  <div class="tab" data-p="presenze" onclick="showPane('presenze')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
     <div class="tab-lbl">Presenze</div>
   </div>
-  <div class="tab" onclick="showPane('briefing')">
+  <div class="tab" data-p="briefing" onclick="showPane('briefing')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <div class="tab-lbl">Briefing</div>
   </div>
-  <div class="tab" onclick="showPane('settimanale')">
+  <div class="tab" data-p="settimanale" onclick="showPane(CTRL_LAST)">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>
-    <div class="tab-lbl">Settimana</div>
+    <div class="tab-lbl">Controlli</div>
   </div>
-  <div class="tab" onclick="showPane('quindicinale')">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><text x="5.5" y="19.5" font-size="7" font-weight="800" stroke="none" fill="currentColor" font-family="-apple-system,Arial">15</text></svg>
-    <div class="tab-lbl">15 giorni</div>
+  <div class="tab" data-p="rfi" onclick="showPane('rfi')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="11"/><line x1="12" y1="14" x2="12.01" y2="14"/></svg>
+    <div class="tab-lbl">RFI</div>
   </div>
-  <div class="tab" onclick="showPane('mensile')">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="7,17 9,14 12,16 15,12 17,15"/></svg>
-    <div class="tab-lbl">Mese</div>
-  </div>
-  <div class="tab" onclick="showPane('sopralluogo')">
+  <div class="tab" data-p="sopralluogo" onclick="showPane('sopralluogo')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><polyline points="9,11 11,13 14.5,9" stroke-width="2"/></svg>
     <div class="tab-lbl">Sopralluogo</div>
   </div>
-  <div class="tab" onclick="showPane('storico')">
+  <div class="tab" data-p="storico" onclick="showPane('storico')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="12,11 12,17 15,14"/><line x1="12" y1="11" x2="9" y2="14"/></svg>
     <div class="tab-lbl">Storico</div>
   </div>
-  <div class="tab" onclick="showPane('report')">
+  <div class="tab" data-p="report" onclick="showPane('report')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
     <div class="tab-lbl">Report</div>
   </div>
@@ -524,6 +521,29 @@ textarea.br-in{resize:vertical;min-height:44px}
   </div>
 </div>
 
+<div class="pane" id="pane-rfi">
+  <div class="sec-lbl">RFI - Richieste di informazioni</div>
+  <div class="card">
+    <div class="form-row"><div class="form-lbl">Cantiere</div><input class="form-inp" id="rfi-cantiere" list="dl-cantieri" placeholder="Nome / indirizzo" autocomplete="off" onchange="rfiRender()"></div>
+  </div>
+  <div id="rfi-sum"></div>
+  <div class="sec-lbl" id="rfi-form-lbl">Nuova richiesta</div>
+  <div class="card" style="padding:12px 14px">
+    <textarea class="br-in" id="rfi-og" rows="3" placeholder="Oggetto: cosa chiedi (es. quota imposta pilastro P4, dettaglio nodo trave-pilastro)"></textarea>
+    <input class="br-in" id="rfi-a" list="dl-rfi-dest" autocomplete="off" style="margin-top:8px" placeholder="A chi (es. Ing. Rossi - progettista)">
+    <datalist id="dl-rfi-dest"></datalist>
+    <div class="form-row" style="padding-left:0;padding-right:0"><div class="form-lbl">Inviata il</div><input class="form-inp" id="rfi-d" type="date"></div>
+    <div class="form-row" style="padding-left:0;padding-right:0"><div class="form-lbl">Risposta entro</div><input class="form-inp" id="rfi-sc" type="date"></div>
+    <div class="form-row" id="rfi-dr-row" style="padding-left:0;padding-right:0;display:none"><div class="form-lbl">Risposta ricevuta il</div><input class="form-inp" id="rfi-dr" type="date"></div>
+    <input class="br-in" id="rfi-no" style="margin-top:8px" placeholder="Riferimento / note (es. mail del 10/11, impatto sui tempi)">
+    <div class="btn-row" style="margin-top:12px"><button class="btn btn-blue" id="rfi-save" onclick="rfiSave()">Registra RFI</button><button class="btn btn-ghost" id="rfi-cancel" style="display:none" onclick="rfiCancel()">Annulla</button></div>
+  </div>
+  <div class="sec-lbl">Registro</div>
+  <div class="rep-sel" style="margin:0 0 10px"><button class="rep-btn active" id="rfi-f-a" onclick="rfiFiltro('a')">Da seguire</button><button class="rep-btn" id="rfi-f-t" onclick="rfiFiltro('t')">Tutte</button></div>
+  <div id="rfi-list"></div>
+  <div class="pr-alert info">Il registro finisce nel backup su Drive. Nel rapporto giornaliero compaiono da sole le RFI inviate o risposte quel giorno e quelle ancora in attesa; nei report settimanali e mensili automatici c'è la tabella del periodo.</div>
+</div>
+
 <div class="pane" id="pane-sopralluogo">
   <div class="sec-lbl">Dati sopralluogo</div>
   <div class="card">
@@ -699,7 +719,6 @@ settimanale:[
     {id:"s-c4",testo:"Materiali in arrivo la settimana prossima verificati (ordini)"}
   ]},
   {id:"s-documentazione",titolo:"Documentazione",icona:"folder",colore:"t-green",voci:[
-    {id:"s-d1",testo:"Diari di cantiere della settimana completati e archiviati"},
     {id:"s-d2",testo:"Foto di avanzamento settimanale archiviate con data e area"},
     {id:"s-d3",testo:"Verbale riunione di avanzamento redatto",sub:"Con action list e responsabili"},
     {id:"s-d4",testo:"Report settimanale inviato al committente / DL"}
@@ -732,7 +751,6 @@ quindicinale:[
     {id:"q-s9",testo:"PSC aggiornato se cambiate lavorazioni o imprese"}
   ]},
   {id:"q-rfi",titolo:"RFI e comunicazioni formali",icona:"mail",colore:"t-orange",voci:[
-    {id:"q-r1",testo:"Registro RFI aggiornato — nessuna RFI scaduta senza risposta"},
     {id:"q-r2",testo:"Comunicazioni formali al committente archiviate"},
     {id:"q-r3",testo:"Change order / varianti: tutte approvate per iscritto prima dell'esecuzione"}
   ]},
@@ -1001,12 +1019,13 @@ function showPane(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const pane=document.getElementById('pane-'+name);
   if(pane){pane.style.display='block';pane.classList.add('active');}
-  const order=['giornaliera','presenze','briefing','settimanale','quindicinale','mensile','sopralluogo','storico','report'];
-  const idx=order.indexOf(name);
+  const tp=['quindicinale','mensile'].includes(name)?'settimanale':name;
+  if(['settimanale','quindicinale','mensile'].includes(name)){CTRL_LAST=name;if(typeof ctrlBar==='function')ctrlBar(name);}
+  if(name==='rfi'&&typeof rfiShow==='function')rfiShow();
   if(name==='presenze'&&typeof prRender==='function')prRender();
   if(name==='briefing'&&typeof brShow==='function')brShow();
   if(name==='storico'&&typeof rdRender==='function'){rdRender();dvLoad();}
-  if(idx>=0)document.querySelectorAll('.tab')[idx]?.classList.add('active');
+  document.querySelector('.tab[data-p="'+tp+'"]')?.classList.add('active');
 }
 
 function resetCL(cad){
@@ -1375,6 +1394,7 @@ function genReport(){
       const t=getSecNote(sec.id);
       if(t)sections.push({title:sec.titolo.replace(/^Note - /,''),score:null,items:t.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({label:x,value:'',note:''}))});
     });
+    {const rf=rfiDaily(gv('g-cantiere'),data||prToday());if(rf)sections.push(rf);}
   }else{
     cadKey=currentRepType;
     cant=gv(cadKey[0]+'-cantiere')||'[cantiere]';
@@ -1749,7 +1769,7 @@ const IMP_SUB=[['ok','Autorizzato'],['dv','Da autorizzare'],['ko','Non autorizza
 const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto','Site manager','Supervisore squadra montaggio acciaio'];
 const PR_SHORT={ok:'OK',dv:'Da verif.',ko:'NON CONF.',na:'N/A'};
 
-let PR={records:[],imprese:[],locks:{},log:[],delImp:[],snap:{},briefs:{},rub:[],cal:{it:[],nt:{}}}, prEditId=null, impEditId=null, prStoreOk=true;
+let PR={records:[],imprese:[],locks:{},log:[],delImp:[],snap:{},briefs:{},rub:[],cal:{it:[],nt:{}},rfi:[]}, prEditId=null, impEditId=null, prStoreOk=true;
 
 const pe=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1770,7 +1790,7 @@ const prSafe=s=>String(s||'').replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-
 function prLoad(){
   try{
     const raw=localStorage.getItem(PR_KEY);
-    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[],snap:s.snap||{},briefs:s.briefs||{},rub:s.rub||[],cal:{it:(s.cal&&s.cal.it)||[],nt:(s.cal&&s.cal.nt)||{}}};}
+    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[],snap:s.snap||{},briefs:s.briefs||{},rub:s.rub||[],cal:{it:(s.cal&&s.cal.it)||[],nt:(s.cal&&s.cal.nt)||{}},rfi:s.rfi||[]};}
   }catch(e){prStoreOk=false;}
 }
 function prSaveLocal(){
@@ -2281,12 +2301,16 @@ function prMerge(s){
   const mr=new Set(PR.rub.map(c=>c.id));
   (s.rub||[]).forEach(c=>{if(c&&c.id&&!tomb.has(c.id)&&!mr.has(c.id)){PR.rub.push(c);n++;}});
   PR.rub=PR.rub.filter(c=>!tomb.has(c.id));
+  PR.rfi=PR.rfi||[];
+  const mrf=new Map(PR.rfi.map(x=>[x.id,x]));
+  (s.rfi||[]).forEach(x=>{if(!x||!x.id||tomb.has(x.id))return;const m=mrf.get(x.id);if(!m){PR.rfi.push(x);mrf.set(x.id,x);n++;}else if((x.u||0)>(m.u||0)){Object.assign(m,x);n++;}});
+  PR.rfi=PR.rfi.filter(x=>!tomb.has(x.id));
   PR.cal=PR.cal||{it:[],nt:{}};PR.cal.nt=PR.cal.nt||{};
   const sc=s.cal||{},ci=new Map(PR.cal.it.map(i=>[i.id,i]));
   (sc.it||[]).forEach(i=>{if(!i||!i.id||tomb.has(i.id))return;const m=ci.get(i.id);if(!m){PR.cal.it.push(i);ci.set(i.id,i);n++;}else if((i.u||0)>(m.u||0)){Object.assign(m,i);n++;}});
   PR.cal.it=PR.cal.it.filter(i=>!tomb.has(i.id));
   Object.keys(sc.nt||{}).forEach(k=>{const a=sc.nt[k],m=PR.cal.nt[k];if(a&&(!m||(a.u||0)>(m.u||0))){PR.cal.nt[k]=a;n++;}});
-  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();rdRender();}}
+  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();rdRender();if(typeof rfiRender==='function')rfiRender();}}
   return n;
 }
 async function prDriveSync(){
@@ -3066,6 +3090,126 @@ function calPdfGantt(){
 }
 function calPdf(){return CALX.vista==='g'?calPdfGantt():calPdfMese();}
 
+// ── RFI (richieste di informazioni) + barra "Controlli" ───────────────────────
+// PR.rfi = [{id,ck,cant,n,d,og,a,sc,st:'a'|'r'|'c',dr,no,u}]   a=aperta r=risposta ricevuta c=chiusa
+const RFX={edit:null,filtro:'a'};
+const rfiData=()=>{PR.rfi=PR.rfi||[];return PR.rfi;};
+const rfiCk=()=>prKey(gv('rfi-cantiere'));
+const rfiGg=(a,b)=>Math.round((brPd(b)-brPd(a))/864e5);
+function rfiStato(r,t){return r.st==='c'?'c':r.st==='r'?'r':(r.sc&&r.sc<t?'s':'a');}
+const RFI_LBL={a:['Aperta','var(--orange)','var(--orange-bg)'],s:['Scaduta','var(--red)','var(--red-bg)'],r:['Risposta ricevuta','var(--blue)','var(--blue-bg)'],c:['Chiusa','var(--green)','var(--green-bg)']};
+function rfiShow(){
+  if(!gv('rfi-cantiere')&&gv('g-cantiere'))pe('rfi-cantiere').value=gv('g-cantiere');
+  if(!pe('rfi-d').value)pe('rfi-d').value=prToday();
+  rfiRender();
+}
+function rfiFiltro(f){RFX.filtro=f;rfiRender();}
+function rfiRender(){
+  const el=pe('rfi-list');if(!el)return;
+  const ck=rfiCk(),t=prToday(),all=rfiData().filter(r=>r.ck===ck);
+  pe('rfi-f-a').classList.toggle('active',RFX.filtro==='a');pe('rfi-f-t').classList.toggle('active',RFX.filtro==='t');
+  pe('dl-rfi-dest').innerHTML=[...new Set(rfiData().map(r=>r.a).filter(Boolean))].sort().map(x=>`<option value="${esc(x)}">`).join('');
+  const aperte=all.filter(r=>r.st==='a'),scad=aperte.filter(r=>r.sc&&r.sc<t),att=all.filter(r=>r.st==='r');
+  pe('rfi-sum').innerHTML=!gv('rfi-cantiere')?'<div class="pr-alert warn">Inserisci il cantiere: ogni cantiere ha il suo registro RFI.</div>':
+    `<div class="pr-alert ${scad.length?'warn':'info'}"><b>${aperte.length}</b> ${aperte.length===1?'aperta':'aperte'}${scad.length?`, di cui <b>${scad.length} scadut${scad.length===1?'a':'e'}</b> senza risposta`:''}${att.length?` · ${att.length} con risposta da recepire`:''} · ${all.length} in totale</div>`;
+  let L=RFX.filtro==='a'?all.filter(r=>r.st!=='c'):all.slice();
+  const ord={s:0,a:1,r:2,c:3};
+  L.sort((x,y)=>ord[rfiStato(x,t)]-ord[rfiStato(y,t)]||((x.sc||'9999')<(y.sc||'9999')?-1:(x.sc||'9999')>(y.sc||'9999')?1:(y.n-x.n)));
+  el.innerHTML=L.length?L.map(r=>{
+    const s=rfiStato(r,t),l=RFI_LBL[s];
+    let when='';
+    if(r.st==='a'&&r.sc){const g=rfiGg(t,r.sc);when=g<0?`<b style="color:var(--red)">scaduta da ${-g} gg</b>`:g===0?'<b>risposta attesa oggi</b>':`mancano ${g} gg`;}
+    else if(r.dr)when=`${r.st==='c'?'chiusa':'risposta'} il ${prFmtD(r.dr)}`;
+    return `<div class="card" style="padding:12px 14px"><div style="display:flex;gap:8px;align-items:center"><b style="flex:1">RFI n. ${r.n}</b><span class="rfi-st" style="color:${l[1]};background:${l[2]}">${l[0]}</span></div>
+      <div style="margin-top:6px;white-space:pre-wrap">${esc(r.og)}</div>
+      <div class="row-sub">a: <b>${esc(r.a||'—')}</b> · inviata ${prFmtD(r.d)}${r.sc?' · risposta entro '+prFmtD(r.sc):''}${when?' · '+when:''}</div>
+      ${r.no?`<div class="row-sub">${esc(r.no)}</div>`:''}
+      <div class="btn-row" style="margin-top:10px;gap:6px">
+        ${r.st==='a'?`<button class="btn btn-ghost btn-sm" onclick="rfiSet('${r.id}','r')">Risposta ricevuta</button><button class="btn btn-ghost btn-sm" onclick="rfiSet('${r.id}','c')">Chiudi</button>`:''}
+        ${r.st==='r'?`<button class="btn btn-ghost btn-sm" onclick="rfiSet('${r.id}','c')">Chiudi</button>`:''}
+        ${r.st!=='a'?`<button class="btn btn-ghost btn-sm" onclick="rfiSet('${r.id}','a')">Riapri</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="rfiEdit('${r.id}')">Modifica</button>
+        <button class="br-x" onclick="rfiDel('${r.id}')">Elimina</button></div></div>`;}).join(''):
+    `<div class="pr-alert info">${all.length?'Nessuna RFI da seguire: sono tutte chiuse.':'Nessuna RFI registrata per questo cantiere.'}</div>`;
+}
+function rfiSave(){
+  const cant=gv('rfi-cantiere'),og=gv('rfi-og'),a=gv('rfi-a');
+  if(!cant){toast('Inserisci il cantiere');return;}
+  if(!og){toast('Scrivi l\'oggetto della richiesta');pe('rfi-og').focus();return;}
+  if(!a){toast('Indica a chi è rivolta');pe('rfi-a').focus();return;}
+  const d=gv('rfi-d')||prToday(),sc=gv('rfi-sc'),no=gv('rfi-no'),ck=prKey(cant),now=Date.now();
+  if(sc&&sc<d){toast('La scadenza è precedente alla data di invio');return;}
+  if(RFX.edit){
+    const r=rfiData().find(x=>x.id===RFX.edit);
+    if(r){Object.assign(r,{cant,ck,og,a,d,sc,no,u:now});const dr=gv('rfi-dr');
+      if(dr){r.dr=dr;if(r.st==='a')r.st='r';}else if(r.st!=='a')r.dr=r.dr||prToday();else r.dr='';}
+  }else{
+    const n=Math.max(0,...rfiData().filter(r=>r.ck===ck).map(r=>r.n||0))+1;
+    rfiData().push({id:'r'+brUid(),ck,cant,n,d,og,a,sc,st:'a',dr:'',no,u:now});
+  }
+  prSave();rfiFormReset();rfiRender();toast(RFX.edit?'RFI aggiornata ✓':'RFI registrata ✓');RFX.edit=null;rfiFormUI();
+}
+function rfiFormReset(){['rfi-og','rfi-a','rfi-sc','rfi-no','rfi-dr'].forEach(id=>pe(id).value='');pe('rfi-d').value=prToday();}
+function rfiFormUI(){
+  pe('rfi-save').textContent=RFX.edit?'Salva modifica':'Registra RFI';
+  pe('rfi-cancel').style.display=RFX.edit?'':'none';pe('rfi-dr-row').style.display=RFX.edit?'':'none';
+}
+function rfiEdit(id){
+  const r=rfiData().find(x=>x.id===id);if(!r)return;
+  RFX.edit=id;pe('rfi-og').value=r.og;pe('rfi-a').value=r.a;pe('rfi-d').value=r.d;pe('rfi-sc').value=r.sc||'';pe('rfi-no').value=r.no||'';pe('rfi-dr').value=r.dr||'';
+  rfiFormUI();pe('rfi-og').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function rfiCancel(){RFX.edit=null;rfiFormReset();rfiFormUI();}
+function rfiSet(id,st){
+  const r=rfiData().find(x=>x.id===id);if(!r)return;
+  r.st=st;if(st==='a')r.dr='';else if(!r.dr)r.dr=prToday();r.u=Date.now();prSave();rfiRender();
+}
+function rfiDel(id){
+  const r=rfiData().find(x=>x.id===id);if(!r)return;
+  if(!confirm(`Eliminare la RFI n. ${r.n} (${r.og.slice(0,40)})?`))return;
+  PR.rfi=rfiData().filter(x=>x.id!==id);PR.delImp=[...new Set([...(PR.delImp||[]),id])];
+  if(RFX.edit===id){RFX.edit=null;rfiFormReset();rfiFormUI();}
+  prSave();rfiRender();
+}
+// sezione per il rapporto giornaliero (stato alla data del rapporto)
+function rfiDaily(cant,data){
+  const ck=prKey(cant);if(!ck)return null;
+  const all=rfiData().filter(r=>r.ck===ck&&r.d<=data),items=[];
+  const fmt=r=>`RFI n. ${r.n} - ${r.og.replace(/\s*\n\s*/g,' ')} (a: ${r.a})`;
+  all.filter(r=>r.d===data).forEach(r=>items.push({label:fmt(r)+(r.sc?' - risposta richiesta entro '+prFmtD(r.sc):''),value:'INVIATA',note:r.no||''}));
+  all.filter(r=>r.dr===data&&r.d!==data).forEach(r=>items.push({label:fmt(r),value:'RISPOSTA',note:r.st==='c'?'Chiusa in giornata':''}));
+  all.filter(r=>r.d!==data&&(!r.dr||r.dr>data)).sort((x,y)=>x.n-y.n).forEach(r=>{
+    const g=r.sc?rfiGg(data,r.sc):null;
+    items.push({label:fmt(r)+' - inviata '+prFmtD(r.d),value:g!=null&&g<0?'SCADUTA':'IN ATTESA',note:r.sc?(g<0?`Risposta richiesta entro ${prFmtD(r.sc)}: scaduta da ${-g} gg`:`Risposta richiesta entro ${prFmtD(r.sc)}`):''});});
+  return items.length?{title:'RFI - Richieste di informazioni',score:null,items}:null;
+}
+// sezione per i report automatici (settimanali / mensili)
+function rfiPeriod(cant,dal,al){
+  const ck=prKey(cant),all=rfiData().filter(r=>r.ck===ck&&r.d<=al);
+  const rows=all.filter(r=>r.d>=dal||(r.dr&&r.dr>=dal&&r.dr<=al)||(!r.dr||r.dr>al)).sort((x,y)=>x.n-y.n);
+  if(!rows.length)return null;
+  const st=r=>r.dr&&r.dr<=al?(r.st==='c'?'Chiusa':'Risposta'):(r.sc&&r.sc<al?'SCADUTA':'Aperta');
+  const inv=all.filter(r=>r.d>=dal).length,ris=all.filter(r=>r.dr&&r.dr>=dal&&r.dr<=al).length;
+  const op=all.filter(r=>!r.dr||r.dr>al),sc=op.filter(r=>r.sc&&r.sc<al).length;
+  return {title:'RFI - Richieste di informazioni',score:null,
+    items:[{label:`Inviate nel periodo: ${inv}. Risposte ricevute: ${ris}. Aperte a fine periodo: ${op.length}${sc?` (di cui ${sc} scadute senza risposta)`:''}.`,value:'',note:''}],
+    table:{head:['N.','Oggetto','A','Inviata','Entro','Stato','Risposta'],widths:[9,60,30,18,18,23,20],
+      rows:rows.map(r=>[String(r.n),r.og.replace(/\s*\n\s*/g,' '),r.a,prFmtD(r.d),r.sc?prFmtD(r.sc):'—',st(r),r.dr&&r.dr<=al?prFmtD(r.dr):'—'])}};
+}
+// barra "Controlli": scelta Settimana / 15 giorni / Mese + stato RFI
+let CTRL_LAST='settimanale';
+const CTRL_P=[['settimanale','Settimana'],['quindicinale','15 giorni'],['mensile','Mese']];
+function ctrlInit(){
+  CTRL_P.forEach(([p])=>{const pn=pe('pane-'+p);if(!pn||pe('ctrl-bar-'+p))return;const d=document.createElement('div');d.id='ctrl-bar-'+p;pn.insertBefore(d,pn.firstChild);});
+}
+function ctrlBar(name){
+  const el=pe('ctrl-bar-'+name);if(!el)return;
+  const cant=gv(name[0]+'-cantiere')||gv('g-cantiere'),ck=prKey(cant),t=prToday(),all=ck?rfiData().filter(r=>r.ck===ck&&r.st==='a'):[],sc=all.filter(r=>r.sc&&r.sc<t).length;
+  el.innerHTML=`<div class="rep-sel" style="margin:0 0 4px">${CTRL_P.map(([p,l])=>`<button class="rep-btn${p===name?' active':''}" onclick="showPane('${p}')">${l}</button>`).join('')}</div>
+   <div class="pr-alert ${sc?'warn':'info'}" style="margin-top:10px;cursor:pointer" onclick="showPane('rfi')">${ck?`RFI aperte: <b>${all.length}</b>${sc?`, <b>${sc} scadute</b> senza risposta`:''} - apri il registro`:'RFI: inserisci il cantiere o apri il registro'}</div>`;
+}
+document.addEventListener('DOMContentLoaded',ctrlInit);
+
 // ── REPORT AUTOMATICI SETTIMANALI / MENSILI (dai rapporti giornalieri e dal registro presenze) ──
 function snapSave(cant,data,o){
   if(!cant||!data)return{rev:0};
@@ -3266,6 +3410,7 @@ function autoRep(){
   });
   if(!an.items.length)an.items.push({label:'Nessuna anomalia o nota registrata nel periodo.',value:'',note:''});
   sections.push(an);
+  {const rf=rfiPeriod(cant,R.dal,R.al);if(rf)sections.push(rf);}
   const pz=list.filter(d=>d.snap&&d.snap.nx&&d.snap.nx['g-n-pezzi']);
   if(pz.length)sections.push({title:'Pezzi montati nel periodo',score:null,items:pz.map(d=>({label:dm(d.data)+' - '+d.snap.nx['g-n-pezzi'].replace(/\s*\n\s*/g,'; '),value:'',note:''}))});
 
