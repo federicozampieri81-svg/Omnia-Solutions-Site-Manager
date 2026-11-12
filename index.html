@@ -220,10 +220,20 @@ textarea.br-in{resize:vertical;min-height:44px}
 .br-g>*{flex:1 1 110px;min-width:0}
 .cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .cal-h{font-size:11px;font-weight:700;color:var(--label3);text-align:center;padding:4px 0}.cal-h.sun{color:var(--red)}
-.cal-c{min-height:72px;background:var(--fill);border-radius:7px;padding:2px;overflow:hidden;cursor:pointer;border:2px solid transparent;box-sizing:border-box;min-width:0}
+.cal-c{min-height:88px;background:var(--fill);border-radius:7px;padding:2px;overflow:hidden;cursor:pointer;border:2px solid transparent;box-sizing:border-box;min-width:0}
 .cal-c.out{opacity:.5}.cal-c.sel{border-color:var(--blue);background:var(--blue-bg)}.cal-c.today{box-shadow:inset 0 0 0 1.5px var(--orange)}
 .cal-n{font-size:12px;font-weight:600;padding:0 3px;color:var(--label)}.cal-n.sun{color:var(--red)}.cal-nt{font-size:7px;color:var(--orange);margin-left:2px;vertical-align:middle}
-.cal-chip{font-size:9.5px;line-height:1.25;padding:1px 3px;border-radius:3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.cal-chip{font-size:9px;line-height:1.2;padding:1px 3px;border-radius:3px;margin-top:2px;font-weight:600;overflow:hidden;overflow-wrap:break-word;word-break:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4}
+#pane-briefing.cal-on{max-width:min(1600px,97vw)}
+#pane-briefing.cal-on>.card,#pane-briefing.cal-on>.sec-lbl,#cal-wrap>:not(#cal-main){max-width:840px}
+@media(min-width:900px){
+  .cal-g{gap:4px}.cal-h{font-size:13px;padding:6px 0}
+  .cal-c{min-height:132px;padding:5px;border-radius:9px}
+  .cal-n{font-size:15px;padding:0 2px 2px}
+  .cal-chip{font-size:13px;line-height:1.25;padding:3px 6px;margin-top:4px;border-radius:5px;-webkit-line-clamp:3}
+  .cal-more{font-size:12px}
+  .cal-gl{width:190px;font-size:13px}.cal-gd{font-size:12px}.cal-gd span{font-size:10px}.cal-gb{height:22px;top:4px}
+}
 .cal-more{font-size:9px;color:var(--label2);text-align:center;margin-top:1px}
 .cal-pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .cal-sw{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0;box-shadow:0 0 0 1px var(--sep)}.cal-sw.on{border-color:var(--card);box-shadow:0 0 0 2.5px var(--label)}
@@ -399,7 +409,7 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div id="br-dest"></div>
   <div id="cal-wrap" style="display:none">
     <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere qui sopra: ogni cantiere ha il suo calendario.</div>
-    <div class="card" style="padding:10px 8px">
+    <div class="card" id="cal-main" style="padding:10px 8px">
       <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;flex-wrap:wrap">
         <div class="rep-sel" style="margin:0"><button class="rep-btn active" id="cal-vm" style="padding:6px 12px;font-size:13px" onclick="calVista('m')">Mese</button><button class="rep-btn" id="cal-vg" style="padding:6px 12px;font-size:13px" onclick="calVista('g')">Gantt</button></div>
         <select id="cal-span" class="form-inp" style="display:none;flex:none;width:auto;font-size:13px" onchange="calSpan(this.value)"><option value="1">1 mese</option><option value="2">2 mesi</option><option value="3">3 mesi</option></select>
@@ -2600,7 +2610,10 @@ function calMode(on){
   sh('cal-wrap',on);
   ['br-data-row','br-body','br-dest','br-btns','br-info'].forEach(id=>sh(id,!on));
   if(on){const o=pe('br-out');if(o)o.style.display='none';}
+  const pn=pe('pane-briefing');if(pn)pn.classList.toggle('cal-on',on);
 }
+const calWide=()=>window.innerWidth>=900;
+let calRz=null;window.addEventListener('resize',()=>{clearTimeout(calRz);calRz=setTimeout(()=>{if(BRX.tipo==='m'&&pe('cal-wrap')&&pe('cal-wrap').style.display!=='none'){calGrid();calGantt();}},150);});
 function calInitView(){if(!CALX.y){const d=new Date();CALX.y=d.getFullYear();CALX.m=d.getMonth();}}
 function calNav(n){calInitView();const d=new Date(CALX.y,CALX.m+n,1);CALX.y=d.getFullYear();CALX.m=d.getMonth();calRender();}
 function calToday(){const d=new Date();CALX.y=d.getFullYear();CALX.m=d.getMonth();calRender();}
@@ -2618,8 +2631,9 @@ function calGrid(){
   let d=brMon(first),h=['LUN','MAR','MER','GIO','VEN','SAB','DOM'].map((x,i)=>`<div class="cal-h${i===6?' sun':''}">${x}</div>`).join('');
   while(d<=last||brDow(d)!==0){
     const its=by[d]||[],out=d<first||d>last,dow=brDow(d);
-    const chips=its.slice(0,3).map(i=>`<div class="cal-chip" style="background:${i.c};color:${calFg(i.c)}">${esc(i.t)}</div>`).join('');
-    const more=its.length>3?`<div class="cal-more">+${its.length-3}</div>`:'';
+    const cap=calWide()?8:4;
+    const chips=its.slice(0,cap).map(i=>`<div class="cal-chip" style="background:${i.c};color:${calFg(i.c)}">${esc(i.t)}</div>`).join('');
+    const more=its.length>cap?`<div class="cal-more">+${its.length-cap}</div>`:'';
     const nt=C.nt[ck+'|'+d]&&C.nt[ck+'|'+d].t;
     h+=`<div class="cal-c${out?' out':''}${CALX.sel.has(d)?' sel':''}${d===today?' today':''}" data-d="${d}"><div class="cal-n${dow===6?' sun':''}">${+d.slice(8)}${nt?'<span class="cal-nt">●</span>':''}</div>${chips}${more}</div>`;
     d=brAdd(d,1);
@@ -2936,7 +2950,7 @@ function calGanttRows(a,b){
 }
 const calDiff=(a,b)=>Math.round((brPd(b)-brPd(a))/864e5);
 function calGantt(){
-  const [a,b]=calRange(),rows=calGanttRows(a,b),n=calDiff(a,b)+1,cw=26,today=prToday(),k0=brDow(a);
+  const [a,b]=calRange(),rows=calGanttRows(a,b),n=calDiff(a,b)+1,cw=calWide()?36:26,today=prToday(),k0=brDow(a);
   const el=pe('cal-gantt');
   if(!rows.length){el.innerHTML=`<div class="pr-alert info" style="margin:6px">Nessuna attività in questo periodo. Compilale nella vista Mese: il Gantt si ricava da lì.</div>`;return;}
   let mh='',dh='';
