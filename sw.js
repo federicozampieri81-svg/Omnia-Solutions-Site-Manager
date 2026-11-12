@@ -1,6 +1,6 @@
 // Service worker di Site Manager: l'app si apre anche senza connessione (dati salvati nel dispositivo).
 // Pagina: prima la rete (così gli aggiornamenti arrivano subito), con ripiego sulla copia salvata.
-const V='sm-v4';
+const V='sm-v5';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./logo.png','./jspdf.umd.min.js','./favicon-32.png'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
