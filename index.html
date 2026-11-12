@@ -18,7 +18,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#F3F1EE">
 <title>Site Manager</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
@@ -593,7 +593,7 @@ textarea.br-in{resize:vertical;min-height:44px}
     <div style="padding:12px 14px;border-bottom:.5px solid var(--sep2);display:flex;align-items:center;gap:8px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       <span style="font-size:15px;font-weight:600;flex:1">Omnia Solution / Site Manager</span>
-      <a href="https://drive.google.com/drive/folders/15rmrsVeli486LLDi9ophwtl01hsAGv7n" target="_blank" style="font-size:13px;color:var(--blue);text-decoration:none;font-weight:500">Apri ↗</a>
+      <a href="https://drive.google.com/drive/folders/15rmrsVeli486LLDi9ophwtl01hsAGv7n" target="_blank" rel="noopener noreferrer" style="font-size:13px;color:var(--blue);text-decoration:none;font-weight:500">Apri ↗</a>
     </div>
     <div id="hist-body"><div class="hist-empty">Nessun documento salvato in questa sessione.</div></div>
   </div>
@@ -1673,7 +1673,7 @@ function showPdfPreview(targetId,url,filename,note){
       <div style="flex:1"><div style="font-weight:700;font-size:14px">${filename}</div><div style="font-size:12px;color:var(--label2)">${note||'PDF generato con foto incorporate'}</div></div>
     </div>
     <div style="display:flex;gap:8px">
-      <a href="${url}" target="_blank" style="flex:1" class="btn btn-blue btn-sm" style="text-decoration:none;text-align:center">Apri PDF</a>
+      <a href="${url}" target="_blank" rel="noopener noreferrer" style="flex:1" class="btn btn-blue btn-sm" style="text-decoration:none;text-align:center">Apri PDF</a>
       <a href="${url}" download="${filename}" class="btn btn-ghost btn-sm">Scarica</a>
     </div>`;
   out.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1738,7 +1738,7 @@ function renderHist(){
   if(!driveHistory.length){body.innerHTML='<div class="hist-empty">Nessun documento salvato in questa sessione.</div>';return;}
   const tc={'Giornaliero':'var(--blue-bg)','Settimanale':'var(--green-bg)','Quindicinale':'var(--orange-bg)','Mensile':'var(--purple-bg)','Sopralluogo':'var(--red-bg)','Briefing':'var(--yellow-bg)'};
   body.innerHTML=driveHistory.map(h=>{const d=new Date(h.iso);const ds=d.toLocaleDateString('it-IT',{day:'numeric',month:'short'});const ts=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-    return`<div class="hist-row"><span class="hist-type" style="background:${tc[h.type]||'var(--fill)'}">${h.type}</span><span class="hist-name">${h.name.replace('.pdf','')}</span><span class="hist-date">${ds} ${ts}</span>${h.url?`<a href="${h.url}" target="_blank">Apri ↗</a>`:''}</div>`;
+    return`<div class="hist-row"><span class="hist-type" style="background:${tc[h.type]||'var(--fill)'}">${h.type}</span><span class="hist-name">${esc(h.name.replace('.pdf',''))}</span><span class="hist-date">${ds} ${ts}</span>${h.url&&/^https:\/\//.test(h.url)?`<a href="${esc(h.url)}" target="_blank" rel="noopener noreferrer">Apri ↗</a>`:''}</div>`;
   }).join('');
 }
 
@@ -2274,8 +2274,23 @@ async function prFindAll(){
   return j.files||[];
 }
 // Unisce i dati di un backup a quelli locali senza mai perdere nulla (voci uguali: vince la più completa)
+// Dati provenienti dal backup su Drive: scarta o ripulisce tutto cio' che non ha identificativi sicuri
+const PR_IDOK=/^[A-Za-z0-9_-]{1,64}$/;
+function prSanitize(s){
+  const ok=x=>x&&typeof x.id==='string'&&PR_IDOK.test(x.id),arr=a=>Array.isArray(a)?a:[];
+  const o=Object.assign({},s);
+  ['records','imprese','rub','rfi'].forEach(k=>{o[k]=arr(s[k]).filter(ok);});
+  o.delImp=arr(s.delImp).filter(x=>typeof x==='string'&&PR_IDOK.test(x));
+  const c=s.cal||{};o.cal={it:arr(c.it).filter(ok),nt:(c.nt&&typeof c.nt==='object')?c.nt:{}};
+  o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
+    const b=s.briefs[k];if(!b||typeof b!=='object')return;
+    ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(l&&!PR_IDOK.test(l.id||''))l.id=brUid();});}});});
+    o.briefs[k]=b;});
+  o.snap=(s.snap&&typeof s.snap==='object')?s.snap:{};o.locks=(s.locks&&typeof s.locks==='object')?s.locks:{};o.log=arr(s.log);
+  return o;
+}
 function prMerge(s){
-  let n=0;
+  let n=0;s=prSanitize(s||{});
   const w=r=>(r.rev?r.rev.length:0)+(r.ann?1:0)+(r.usc?1:0);
   const tomb=new Set([...(PR.delImp||[]),...(s.delImp||[])]);PR.delImp=[...tomb];
   const mine=new Map(PR.records.map(r=>[r.id,r]));
@@ -2611,7 +2626,7 @@ function brMail(){
 }
 function brWa(){
   const b=brCur(false);if(!brOk(b))return;
-  window.open('https://wa.me/?text='+encodeURIComponent(brText(b)),'_blank');
+  window.open('https://wa.me/?text='+encodeURIComponent(brText(b)),'_blank','noopener,noreferrer');
 }
 
 // ── CALENDARIO DEL MESE (Briefing > Calendario) ───────────────────────────────
@@ -2941,7 +2956,7 @@ async function calShare(){
   const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=calLast.fn;document.body.appendChild(a);a.click();a.remove();
   toast('Condivisione diretta non disponibile: PDF scaricato, allegalo a mail o messaggio');
 }
-function calWa(){if(!calOk())return;window.open('https://wa.me/?text='+encodeURIComponent(calText()),'_blank');}
+function calWa(){if(!calOk())return;window.open('https://wa.me/?text='+encodeURIComponent(calText()),'_blank','noopener,noreferrer');}
 function calMail(){
   if(!calOk())return;
   const em=brSelected().map(c=>c.email).filter(Boolean);
@@ -3316,7 +3331,7 @@ function dvReopen(){
 function rdRender(){
   const el=pe('rd-list');if(!el)return;
   const L=Object.values(PR.snap).filter(s=>s.form).sort((a,b)=>(b.data+b.ts).localeCompare(a.data+a.ts)).slice(0,40);
-  el.innerHTML=L.length?L.map(s=>{const t=new Date(s.ts);return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(prFmtD(s.data))}</b> · ${esc(s.cant)}<div style="font-size:12px;color:var(--label2)">${s.rev?'Rev. '+s.rev+' · ':''}ultima emissione ${t.toLocaleDateString('it-IT')} ${t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</div></div><button class="br-x" style="color:var(--blue)" onclick="rdOpen('${esc(s.ck+'|'+s.data)}')">Riapri</button></div>`;}).join(''):`<div class="br-it" style="color:var(--label2);font-size:14px">Nessuna giornata registrata: compaiono qui dopo aver generato un Rapporto Giornaliero.</div>`;
+  el.innerHTML=L.length?L.map(s=>{const t=new Date(s.ts);return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(prFmtD(s.data))}</b> · ${esc(s.cant)}<div style="font-size:12px;color:var(--label2)">${s.rev?'Rev. '+s.rev+' · ':''}ultima emissione ${t.toLocaleDateString('it-IT')} ${t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</div></div><button class="br-x" style="color:var(--blue)" data-k="${esc(s.ck+'|'+s.data)}" onclick="rdOpen(this.dataset.k)">Riapri</button></div>`;}).join(''):`<div class="br-it" style="color:var(--label2);font-size:14px">Nessuna giornata registrata: compaiono qui dopo aver generato un Rapporto Giornaliero.</div>`;
 }
 function rdOpen(k){
   const s=PR.snap[k];if(!s||!s.form){toast('Giornata non riapribile');return;}
