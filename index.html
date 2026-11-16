@@ -2506,6 +2506,19 @@ function brReset(){
   if(!confirm('Azzerare questo briefing (lavorazioni, attrezzature, materiali, note)?'))return;
   b.sq=[];b.att=[];b.mat=[];b.note='';b.todo='';brTouch(b);brRender();toast('Briefing azzerato');
 }
+function brMove(){
+  const b=brCur(false);if(!b)return;
+  let d=gv('br-mv');if(!d){toast('Scegli la nuova data');return;}
+  if(b.tipo==='s')d=brMon(d);
+  if(d===b.data){toast('Data già questa');return;}
+  const nk=prKey(b.cant)+'|'+b.tipo+'|'+d;
+  if(PR.briefs[nk]&&!confirm('Esiste già un briefing per quella data: verrà sostituito da questo. Continuare?'))return;
+  const now=new Date().toISOString();
+  PR.briefs[b.k]={k:b.k,ck:b.ck,cant:b.cant,tipo:b.tipo,data:b.data,sq:[],att:[],mat:[],note:'',todo:'',upd:now};
+  b.k=nk;b.data=d;b.upd=now;PR.briefs[nk]=b;prSave();
+  BRX.data=d;pe('br-data').value=d;brLbl();brRender();
+  toast('Briefing spostato al '+prFmtD(d)+(b.tipo==='s'?' (lunedì della settimana)':'')+': rigenera il PDF');
+}
 function brSavedRender(){
   const L=Object.values(PR.briefs||{}).filter(b=>b&&b.k&&(b.tipo==='g'||b.tipo==='s')&&((b.sq||[]).some(q=>(q.lav||[]).some(l=>(l.testo||'').trim()))||(b.note||'').trim()||(b.todo||'').trim()||(b.att||[]).some(a=>(a.testo||'').trim())||(b.mat||[]).some(m=>(m.testo||'').trim())))
     .sort((a,b)=>(b.data+(b.upd||'')).localeCompare(a.data+(a.upd||''))).slice(0,60);
@@ -2531,6 +2544,7 @@ function brRender(){
   const X=(txt,call)=>`<button class="br-x" onclick="${call}">${txt}</button>`;
   const desc=wk?`Settimana dal ${prFmtD(BRX.data)} al ${prFmtD(brAdd(BRX.data,5))} (lun-sab)`:brLong(BRX.data||brDefDate('g'));
   let h=`<div class="pr-alert info"><b>${wk?'Briefing settimanale':'Briefing giornaliero'}</b><br>${esc(desc)}</div>`;
+  if(brCur(false))h+=`<div class="card" style="padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;flex:1;min-width:140px">Data sbagliata? Sposta questo briefing a:</span><input class="form-inp" id="br-mv" type="date" value="${esc(BRX.data)}" style="flex:none;width:auto"><button class="btn btn-ghost btn-sm" onclick="brMove()">Sposta</button></div>`;
 
   h+=`<div class="sec-lbl">Note generali per tutte le squadre</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Raccomandazioni valide per tutti (pulizia, DPI, viabilità, elementi finiti da non danneggiare, meteo...)" oninput="brEdit('note',null,null,this.value)">${esc(b.note||'')}</textarea></div>`;
   h+=`<div class="sec-lbl">Da fare - Site manager (una voce per riga)</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Es. Controllo ferri solaio prima del getto" oninput="brEdit('todo',null,null,this.value)">${esc(b.todo||'')}</textarea></div>`;
