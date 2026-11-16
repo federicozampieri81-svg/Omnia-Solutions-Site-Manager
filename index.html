@@ -436,6 +436,8 @@ textarea.br-in{resize:vertical;min-height:44px}
   </div>
   <div id="br-body"></div>
   <div id="br-dest"></div>
+  <div class="sec-lbl">Briefing salvati - riapri</div>
+  <div class="card" id="br-saved"></div>
   <div id="cal-wrap" style="display:none">
     <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere qui sopra: ogni cantiere ha il suo calendario.</div>
     <div class="card" id="cal-main" style="padding:10px 8px">
@@ -617,6 +619,8 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div class="btn-row" style="margin-top:0"><button class="btn btn-ghost" onclick="dvLoad(true)">Aggiorna elenco</button></div>
   <div class="sec-lbl">Giornate registrate (riapribili per correzioni)</div>
   <div class="card" id="rd-list"></div>
+  <div class="sec-lbl">Briefing registrati (riapribili per modifiche)</div>
+  <div class="card" id="rb-list"></div>
   <div class="sec-lbl">Documenti su Google Drive</div>
   <div class="card">
     <div style="padding:12px 14px;border-bottom:.5px solid var(--sep2);display:flex;align-items:center;gap:8px">
@@ -1053,7 +1057,7 @@ function showPane(name){
   if(name==='rfi'&&typeof rfiShow==='function')rfiShow();
   if(name==='presenze'&&typeof prRender==='function')prRender();
   if(name==='briefing'&&typeof brShow==='function')brShow();
-  if(name==='storico'&&typeof rdRender==='function'){rdRender();dvLoad();}
+  if(name==='storico'&&typeof rdRender==='function'){rdRender();brSavedRender();dvLoad();}
   document.querySelector('.tab[data-p="'+tp+'"]')?.classList.add('active');
 }
 
@@ -2502,7 +2506,23 @@ function brReset(){
   if(!confirm('Azzerare questo briefing (lavorazioni, attrezzature, materiali, note)?'))return;
   b.sq=[];b.att=[];b.mat=[];b.note='';b.todo='';brTouch(b);brRender();toast('Briefing azzerato');
 }
+function brSavedRender(){
+  const L=Object.values(PR.briefs||{}).filter(b=>b&&b.k&&(b.tipo==='g'||b.tipo==='s')&&((b.sq||[]).some(q=>(q.lav||[]).some(l=>(l.testo||'').trim()))||(b.note||'').trim()||(b.todo||'').trim()||(b.att||[]).some(a=>(a.testo||'').trim())||(b.mat||[]).some(m=>(m.testo||'').trim())))
+    .sort((a,b)=>(b.data+(b.upd||'')).localeCompare(a.data+(a.upd||''))).slice(0,60);
+  const html=L.length?L.map(b=>{const t=b.upd?new Date(b.upd):null;const wk=b.tipo==='s';
+    return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(wk?'Sett. dal '+prFmtD(b.data):prFmtD(b.data))}</b> · ${esc(b.cant)}<div style="font-size:12px;color:var(--label2)">${wk?'Settimanale':'Giornaliero'}${t?' · modificato '+t.toLocaleDateString('it-IT')+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):''}</div></div><button class="br-x" style="color:var(--blue)" data-k="${esc(b.k)}" onclick="brOpenSaved(this.dataset.k)">Riapri</button></div>`;}).join('')
+    :`<div class="br-it" style="color:var(--label2)">Nessun briefing salvato.</div>`;
+  ['br-saved','rb-list'].forEach(id=>{const el=pe(id);if(el)el.innerHTML=html;});
+}
+function brOpenSaved(k){
+  const b=PR.briefs[k];if(!b){toast('Briefing non trovato');return;}
+  BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+  pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;
+  showPane('briefing');brLbl();brRender();brDestRender();
+  window.scrollTo(0,0);toast('Briefing riaperto: modifica e rigenera il PDF');
+}
 function brRender(){
+  brSavedRender();
   const el=pe('br-body');if(!el)return;
   if(BRX.tipo==='m'){calRender();return;}
   const b=brCur(false)||{sq:[],att:[],mat:[],note:''},wk=BRX.tipo==='s';
