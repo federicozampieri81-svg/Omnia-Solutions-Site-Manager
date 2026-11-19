@@ -394,6 +394,12 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div class="card" id="pr-list"></div>
   <div class="btn-row" id="pr-actions" style="margin-top:4px"></div>
 
+  <div class="sec-lbl">Note generali e accessi occasionali</div>
+  <div class="card" style="padding:10px 14px">
+    <textarea class="br-in" id="pr-vis" rows="3" placeholder="Es. Autista betoniera (Calcestruzzi Rossi) 08:30-09:15; autista betonpompa 08:45-11:00; visita fornitore Bianchi 14:00" oninput="prVisSet(this.value)"></textarea>
+    <div class="row-sub" style="margin-top:6px">Visitatori e personale di passaggio: restano fuori dal registro ufficiale delle presenze, ma compaiono nel PDF come nota.</div>
+  </div>
+
   <div class="sec-lbl">Imprese in cantiere e verifiche</div>
   <div class="card" id="imp-list"></div>
   <div class="sec-lbl" id="imp-form-lbl">Aggiungi impresa</div>
@@ -1811,7 +1817,7 @@ const IMP_SUB=[['ok','Autorizzato'],['dv','Da autorizzare'],['ko','Non autorizza
 const PR_QUAL=['Montatore acciaio','Montatore LGSF','Carpentiere','Saldatore','Gruista','Operatore PLE','Muratore','Cartongessista','Impiantista elettrico','Idraulico','Manovale','Capocantiere','Caposquadra','Preposto','Site manager','Supervisore squadra montaggio acciaio'];
 const PR_SHORT={ok:'OK',dv:'Da verif.',ko:'NON CONF.',na:'N/A'};
 
-let PR={records:[],imprese:[],locks:{},log:[],delImp:[],snap:{},briefs:{},rub:[],cal:{it:[],nt:{}},rfi:[]}, prEditId=null, impEditId=null, prStoreOk=true;
+let PR={records:[],imprese:[],locks:{},log:[],delImp:[],snap:{},briefs:{},rub:[],cal:{it:[],nt:{}},rfi:[],vis:{}}, prEditId=null, impEditId=null, prStoreOk=true;
 
 const pe=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1832,7 +1838,7 @@ const prSafe=s=>String(s||'').replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-
 function prLoad(){
   try{
     const raw=localStorage.getItem(PR_KEY);
-    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[],snap:s.snap||{},briefs:s.briefs||{},rub:s.rub||[],cal:{it:(s.cal&&s.cal.it)||[],nt:(s.cal&&s.cal.nt)||{}},rfi:s.rfi||[]};}
+    if(raw){const s=JSON.parse(raw);PR={records:s.records||[],imprese:s.imprese||[],locks:s.locks||{},log:s.log||[],delImp:s.delImp||[],snap:s.snap||{},briefs:s.briefs||{},rub:s.rub||[],cal:{it:(s.cal&&s.cal.it)||[],nt:(s.cal&&s.cal.nt)||{}},rfi:s.rfi||[],vis:s.vis||{}};}
   }catch(e){prStoreOk=false;}
 }
 function prSaveLocal(){
@@ -2155,8 +2161,15 @@ function prImpHtml(d,c){
   if(locked)h+='<div class="row"><div class="row-body"><div class="row-sub">Elenco in sola lettura: copia al momento della chiusura. Riapri la giornata per modificarlo.</div></div></div>';
   return h;
 }
+function prVisGet(ck,data){const v=(PR.vis||{})[ck+'|'+data];return v?v.testo:'';}
+function prVisSet(t){
+  const c=prCtx();if(!c.cant){toast('Indica prima il cantiere');return;}
+  PR.vis=PR.vis||{};const k=c.ck+'|'+c.data;
+  PR.vis[k]={k,ck:c.ck,cant:c.cant,data:c.data,testo:t,upd:new Date().toISOString()};prSave();
+}
 function prRender(){
   const c=prCtx(),d=prDay(c.ck,c.data);
+  {const ta=pe('pr-vis'),kk=c.ck+'|'+c.data;if(ta&&(ta.dataset.k!==kk||document.activeElement!==ta)){ta.value=prVisGet(c.ck,c.data);ta.dataset.k=kk;}}
   prRenderLists(c.ck);prBkRender();
   pe('pr-summary').innerHTML=prSummaryHtml(c,d);
   pe('pr-form').style.display=pe('pr-form-lbl').style.display=d.lock?'none':'';
@@ -2237,7 +2250,8 @@ function prImport(input){
 function prPdf(cant,data){
   const ck=prKey(cant),d=prDay(ck,data),comp=gv('p-compilatore');
   const meta=[],sections=[];
-  if(!d.act.length)return{meta,sections,has:false};
+  const visT=(prVisGet(ck,data)||'').trim();
+  if(!d.act.length&&!visT)return{meta,sections,has:false};
   const workers=d.act.filter(r=>prTipo(r.tipo).w);
   const tot=d.act.reduce((s,r)=>s+(prNet(r)||0),0);
   const nImp=new Set(d.act.map(r=>prKey(r.impresa))).size;
@@ -2266,6 +2280,7 @@ function prPdf(cant,data){
     PR.log.filter(l=>l.k===prLk(ck,data)).slice(-6).forEach(l=>pres.items.push({label:`Giornata ${l.az} il ${prFmtTs(l.ts)} da ${l.by}`,value:'',note:''}));
   }else pres.items.push({label:'Nessuna presenza registrata nel registro per questa giornata.',value:'',note:''});
   sections.push(pres);
+  if(visT)sections.push({title:'Note generali e accessi occasionali (non a registro)',score:null,items:visT.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({label:x,value:'',note:''}))});
 
   const imp={title:'Imprese in cantiere e verifiche documentali',score:null,items:[]};
   if(d.imps.length){
@@ -2328,6 +2343,7 @@ function prSanitize(s){
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
     ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(l&&!PR_IDOK.test(l.id||''))l.id=brUid();});}});});
     o.briefs[k]=b;});
+  o.vis={};Object.keys(s.vis||{}).forEach(k=>{const v=s.vis[k];if(v&&typeof v==='object'&&typeof v.testo==='string')o.vis[k]={k:String(v.k||k),ck:String(v.ck||''),cant:String(v.cant||''),data:String(v.data||''),testo:v.testo.slice(0,4000),upd:String(v.upd||'')};});
   o.snap=(s.snap&&typeof s.snap==='object')?s.snap:{};o.locks=(s.locks&&typeof s.locks==='object')?s.locks:{};o.log=arr(s.log);
   return o;
 }
@@ -2355,6 +2371,7 @@ function prMerge(s){
   PR.snap=PR.snap||{};PR.briefs=PR.briefs||{};PR.rub=PR.rub||[];
   Object.keys(s.snap||{}).forEach(k=>{const a=s.snap[k],m=PR.snap[k];if(a&&(!m||(a.ts||'')>(m.ts||''))){PR.snap[k]=a;n++;}});
   Object.keys(s.briefs||{}).forEach(k=>{const a=s.briefs[k],m=PR.briefs[k];if(a&&(!m||(a.upd||'')>(m.upd||''))){PR.briefs[k]=a;n++;}});
+  PR.vis=PR.vis||{};Object.keys(s.vis||{}).forEach(k=>{const a=s.vis[k],m=PR.vis[k];if(a&&(!m||(a.upd||'')>(m.upd||''))){PR.vis[k]=a;n++;}});
   const mr=new Set(PR.rub.map(c=>c.id));
   (s.rub||[]).forEach(c=>{if(c&&c.id&&!tomb.has(c.id)&&!mr.has(c.id)){PR.rub.push(c);n++;}});
   PR.rub=PR.rub.filter(c=>!tomb.has(c.id));
