@@ -721,7 +721,7 @@ giornaliera:[
     {id:"g-a4",auto:1,testo:"Diario di cantiere compilato",sub:"Maestranze, lavorazioni, meteo, materiali"}
   ]},
   {id:"g-materiali",titolo:"Materiali e consegne",icona:"box",colore:"t-blue",voci:[
-    {id:"g-m1",testo:"Materiali consegnati verificati e corrispondenti alla bolla"},
+    {id:"g-m1",testo:"Materiali consegnati verificati e corrispondenti alla bolla",ph:"Cosa è arrivato, DDT, quantità, accettato o respinto..."},
     {id:"g-m2",testo:"Nessun materiale non conforme accettato",sub:"Qualità, marca, modello come da contratto"},
     {id:"g-m3",testo:"Stoccaggio materiali in aree idonee",sub:"Lontano da acque, fuoco, in sicurezza"}
   ]},
@@ -733,7 +733,6 @@ giornaliera:[
   {id:"g-n-att",titolo:"Note - Attività del site manager",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Sopralluoghi, controlli eseguiti, riunioni e coordinamento svolti..."},
   {id:"g-n-disp",titolo:"Note - Disposizioni date",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"A chi (squadra / impresa) e su cosa..."},
   {id:"g-n-com",opz:1,titolo:"Note - Comunicazioni inviate e ricevute",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Data, mittente / destinatario, mezzo (mail, PEC, telefono), oggetto..."},
-  {id:"g-n-cons",titolo:"Note - Consegne e materiali",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa è arrivato, DDT, quantità, accettato o respinto..."},
   {id:"g-n-pezzi",titolo:"Pezzi montati (marche e lotti)",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Marca / codice, lotto o colata, posizione di montaggio..."},
   {id:"g-n-mezzi",opz:1,titolo:"Note - Mezzi e attrezzature",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Mezzi di sollevamento e noleggi in cantiere, guasti, attrezzature mancanti..."},
   {id:"g-n-acq",titolo:"Note - Acquisti e spese non previste",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa, perché, importo, chi ha autorizzato..."},
@@ -1087,7 +1086,7 @@ function buildRow(cad,secId,v){
         <span class="pill p-ko" onclick="setPill('${v.id}','ko',this)">✕ Non OK</span>
         <span class="pill p-na" onclick="setPill('${v.id}','na',this)">N/A</span>
       </div>
-      <textarea class="note" id="note-${v.id}" placeholder="Note opzionali..." oninput="saveState()" style="min-height:44px;"></textarea>
+      <textarea class="note" id="note-${v.id}" placeholder="${v.ph||'Note opzionali...'}" oninput="saveState()" style="min-height:44px;"></textarea>
     </div>
   </div>`;
 }
@@ -1176,6 +1175,7 @@ function loadState(){
       if(!s[cad])return;
       const cont=document.getElementById('sections-'+cad);if(!cont)return;
       cont.querySelectorAll('input[type=checkbox]').forEach(c=>{if(s[cad][c.id]!==undefined)c.checked=s[cad][c.id];});
+      if(cad==='giornaliera')gMigra(s[cad]);
       cont.querySelectorAll('textarea').forEach(t=>{if(s[cad][t.id]!==undefined)t.value=s[cad][t.id];});
       Object.keys(s[cad]).forEach(k=>{
         if(!k.startsWith('pill-'))return;
@@ -3474,7 +3474,13 @@ function gFormGet(){
   cont.querySelectorAll('.pill.sel').forEach(p=>{const vid=gPillVid(p);if(vid)f.pills[vid]=[...p.classList].find(c=>c.startsWith('p-'));});
   return f;
 }
+function gMigra(ta){
+  // vecchio campo "Note - Consegne e materiali" ora unito alla voce "Materiali consegnati"
+  if(ta&&ta['g-n-cons-note']){const o=ta['note-g-m1']||'';ta['note-g-m1']=o?o+'\n'+ta['g-n-cons-note']:ta['g-n-cons-note'];delete ta['g-n-cons-note'];}
+  return ta;
+}
 function gFormSet(f){
+  if(f&&f.ta)f.ta=gMigra(Object.assign({},f.ta));
   [['g-cantiere','cant'],['g-data','data'],['g-meteo','meteo'],['g-temp','temp'],['g-lavorazioni','lav']].forEach(([id,k])=>{const el=pe(id);if(el)el.value=f[k]||'';});
   const cont=document.getElementById('sections-giornaliera');if(!cont)return;
   cont.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=!!(f.cb&&f.cb[c.id]);});
