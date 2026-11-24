@@ -122,6 +122,10 @@ body::before{content:"";position:fixed;inset:0;z-index:120;pointer-events:none;b
 .form-row{display:flex;align-items:center;padding:13px 14px;border-bottom:.5px solid var(--sep2);min-height:50px;gap:10px}
 .form-row:last-child{border-bottom:none}
 .form-lbl{font-size:16px;color:var(--label);min-width:100px;flex-shrink:0}
+.nomi-dd{position:absolute;left:0;right:0;top:100%;z-index:60;max-height:55vh;overflow-y:auto;background:var(--card);border:.5px solid var(--sep);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.22);margin-top:2px;-webkit-overflow-scrolling:touch}
+.nomi-gh{position:sticky;top:0;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--label2);background:var(--bg);border-bottom:.5px solid var(--sep2)}
+.nomi-it{padding:11px 14px;font-size:16px;border-bottom:.5px solid var(--sep2);cursor:pointer;color:var(--label)}
+.nomi-it:active{background:var(--blue-bg)}
 .form-inp{flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--blue);text-align:right;outline:none}
 .form-inp::placeholder{color:var(--label3)}
 .form-sel{flex:1;border:none;background:transparent;font-size:15px;font-family:inherit;color:var(--blue);text-align:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer}
@@ -375,8 +379,8 @@ textarea.br-in{resize:vertical;min-height:44px}
 
   <div class="sec-lbl" id="pr-form-lbl">Nuova presenza</div>
   <div class="card" id="pr-form">
-    <div class="form-row"><div class="form-lbl">Nominativo</div><input class="form-inp" id="p-nome" list="dl-nomi" placeholder="Cognome Nome" autocomplete="off" onchange="prAutofill()"></div>
-    <div class="form-row"><div class="form-lbl">Impresa / ente</div><input class="form-inp" id="p-impresa" list="dl-imprese" placeholder="Ragione sociale" autocomplete="off" oninput="prNomiList()"></div>
+    <div class="form-row" style="position:relative"><div class="form-lbl">Nominativo</div><input class="form-inp" id="p-nome" placeholder="Cognome Nome" autocomplete="off" onchange="prAutofill()" onfocus="prNomiOpen()" oninput="prNomiOpen()" onblur="setTimeout(prNomiClose,150)"><div id="nomi-dd" class="nomi-dd" style="display:none"></div></div>
+    <div class="form-row"><div class="form-lbl">Impresa / ente</div><input class="form-inp" id="p-impresa" list="dl-imprese" placeholder="Ragione sociale" autocomplete="off"></div>
     <div class="form-row"><div class="form-lbl">Mansione</div><input class="form-inp" id="p-qual" list="dl-qual" placeholder="es. Montatore acciaio" autocomplete="off"></div>
     <div class="form-row"><div class="form-lbl">Tipo</div><select class="form-sel" id="p-tipo" onchange="prTipoChange()"></select></div>
     <div class="form-row"><div class="form-lbl">Ingresso</div><input class="form-inp" id="p-in" type="time"></div>
@@ -428,7 +432,7 @@ textarea.br-in{resize:vertical;min-height:44px}
   </details>
 
   <datalist id="dl-cantieri"></datalist>
-  <datalist id="dl-nomi"></datalist>
+  
   <datalist id="dl-imprese"></datalist>
   <datalist id="dl-qual"></datalist>
 </div>
@@ -2086,17 +2090,28 @@ async function prVerify(){
 }
 
 // ── rendering ─────────────────────────────────────────────────────────────────
-function prNomiList(){
-  const dl=pe('dl-nomi');if(!dl)return;
-  const ck=prCtx().ck,fi=prKey(gv('p-impresa'));
-  const m=new Map();
+function prNomiGroups(q){
+  const ck=prCtx().ck,m=new Map();
   PR.records.filter(r=>r.ck===ck&&!r.ann&&String(r.nome||'').trim()).forEach(r=>m.set(prKey(r.nome),r));
-  let L=[...m.values()];
-  if(fi&&L.some(r=>prKey(r.impresa)===fi))L=L.filter(r=>prKey(r.impresa)===fi);
-  const cmp=(a,b)=>String(a||'').localeCompare(String(b||''),'it',{sensitivity:'base'});
-  L.sort((a,b)=>(!a.impresa)-(!b.impresa)||cmp(a.impresa,b.impresa)||cmp(a.nome,b.nome));
-  dl.innerHTML=L.map(r=>`<option value="${esc(r.nome)}" label="${esc(r.impresa||'')}">`).join('');
+  const qq=prKey(q||'');
+  const g={};
+  [...m.values()].forEach(r=>{if(qq&&!prKey(r.nome).includes(qq))return;const d=String(r.impresa||'').trim();const k=prKey(d);(g[k]=g[k]||{label:d,list:[]}).list.push(r.nome);});
+  const cmp=(a,b)=>String(a).localeCompare(String(b),'it',{sensitivity:'base',numeric:true});
+  const rank=l=>!l?2:/^\d/.test(l)?1:0;
+  return Object.values(g).sort((a,b)=>rank(a.label)-rank(b.label)||cmp(a.label,b.label)).map(x=>({label:x.label||'Senza ditta',list:x.list.sort(cmp)}));
 }
+function prNomiOpen(){
+  const dd=pe('nomi-dd');if(!dd)return;
+  const G=prNomiGroups(gv('p-nome'));
+  if(!G.length){dd.style.display='none';return;}
+  dd.innerHTML=G.map(g=>`<div class="nomi-gh">${esc(g.label)}</div>`+g.list.map(n=>`<div class="nomi-it" data-n="${esc(n)}" data-i="${esc(g.label==='Senza ditta'?'':g.label)}">${esc(n)}</div>`).join('')).join('');
+  dd.style.display='';
+}
+function prNomiClose(){const dd=pe('nomi-dd');if(dd)dd.style.display='none';}
+function prNomiList(){const dd=pe('nomi-dd');if(dd&&dd.style.display!=='none')prNomiOpen();}
+document.addEventListener('mousedown',e=>{const it=e.target.closest&&e.target.closest('.nomi-it');if(!it)return;e.preventDefault();
+  pe('p-nome').value=it.dataset.n;if(it.dataset.i)pe('p-impresa').value=it.dataset.i;
+  prNomiClose();prAutofill();if(it.dataset.i)pe('p-impresa').value=it.dataset.i;});
 function prRenderLists(ck){
   const set=(id,vals)=>{const dl=pe(id);if(dl)dl.innerHTML=[...new Set(vals.filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join('');};
   set('dl-cantieri',PR.records.map(r=>r.cant).concat(PR.imprese.map(i=>i.cant)));
