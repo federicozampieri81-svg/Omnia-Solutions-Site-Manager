@@ -122,6 +122,8 @@ body::before{content:"";position:fixed;inset:0;z-index:120;pointer-events:none;b
 .form-row{display:flex;align-items:center;padding:13px 14px;border-bottom:.5px solid var(--sep2);min-height:50px;gap:10px}
 .form-row:last-child{border-bottom:none}
 .form-lbl{font-size:16px;color:var(--label);min-width:100px;flex-shrink:0}
+.row.auto-row{display:none}
+.opz-off{display:none}
 .nomi-dd{position:absolute;left:0;right:0;top:100%;z-index:60;max-height:55vh;overflow-y:auto;background:var(--card);border:.5px solid var(--sep);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.22);margin-top:2px;-webkit-overflow-scrolling:touch}
 .nomi-gh{position:sticky;top:0;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--label2);background:var(--bg);border-bottom:.5px solid var(--sep2)}
 .nomi-it{padding:11px 14px;font-size:16px;border-bottom:.5px solid var(--sep2);cursor:pointer;color:var(--label)}
@@ -708,18 +710,18 @@ giornaliera:[
     {id:"g-s6",testo:"Viabilità interna cantiere libera e sicura"}
   ]},
   {id:"g-presenze",titolo:"Presenze e maestranze",icona:"people",colore:"t-blue",voci:[
-    {id:"g-p1",testo:"Registro presenze compilato",sub:"Impresa principale + tutti i subappaltatori"},
-    {id:"g-p2",testo:"Tutti i presenti hanno il tesserino di riconoscimento",sub:"Obbligatorio D.Lgs. 81/08 art. 18"},
+    {id:"g-p1",auto:1,testo:"Registro presenze compilato",sub:"Impresa principale + tutti i subappaltatori"},
+    {id:"g-p2",auto:1,testo:"Tutti i presenti hanno il tesserino di riconoscimento",sub:"Obbligatorio D.Lgs. 81/08 art. 18"},
     {id:"g-p3",testo:"Subappaltatori non autorizzati assenti"}
   ]},
   {id:"g-avanzamento",titolo:"Avanzamento lavori",icona:"chart",colore:"t-blue",voci:[
     {id:"g-a1",testo:"Lavorazioni del giorno in linea con il programma"},
     {id:"g-a2",testo:"Nessun blocco o impedimento rilevato",sub:"Es. mancanza materiali, interferenze, problemi meteo"},
-    {id:"g-a3",testo:"Foto di avanzamento scattate",sub:"Almeno 3 foto datate per area di lavoro"},
-    {id:"g-a4",testo:"Diario di cantiere compilato",sub:"Maestranze, lavorazioni, meteo, materiali"}
+    {id:"g-a3",auto:1,testo:"Foto di avanzamento scattate",sub:"Almeno 3 foto datate per area di lavoro"},
+    {id:"g-a4",auto:1,testo:"Diario di cantiere compilato",sub:"Maestranze, lavorazioni, meteo, materiali"}
   ]},
   {id:"g-materiali",titolo:"Materiali e consegne",icona:"box",colore:"t-blue",voci:[
-    {id:"g-m1",testo:"Materiali consegnati verificati e corrispondenti alla bolla"},
+    {id:"g-m1",testo:"Materiali consegnati verificati e corrispondenti alla bolla",ph:"Cosa è arrivato, DDT, quantità, accettato o respinto..."},
     {id:"g-m2",testo:"Nessun materiale non conforme accettato",sub:"Qualità, marca, modello come da contratto"},
     {id:"g-m3",testo:"Stoccaggio materiali in aree idonee",sub:"Lontano da acque, fuoco, in sicurezza"}
   ]},
@@ -730,14 +732,13 @@ giornaliera:[
   ]},
   {id:"g-n-att",titolo:"Note - Attività del site manager",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Sopralluoghi, controlli eseguiti, riunioni e coordinamento svolti..."},
   {id:"g-n-disp",titolo:"Note - Disposizioni date",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"A chi (squadra / impresa) e su cosa..."},
-  {id:"g-n-com",titolo:"Note - Comunicazioni inviate e ricevute",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Data, mittente / destinatario, mezzo (mail, PEC, telefono), oggetto..."},
-  {id:"g-n-cons",titolo:"Note - Consegne e materiali",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa è arrivato, DDT, quantità, accettato o respinto..."},
+  {id:"g-n-com",opz:1,titolo:"Note - Comunicazioni inviate e ricevute",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Data, mittente / destinatario, mezzo (mail, PEC, telefono), oggetto..."},
   {id:"g-n-pezzi",titolo:"Pezzi montati (marche e lotti)",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Marca / codice, lotto o colata, posizione di montaggio..."},
-  {id:"g-n-mezzi",titolo:"Note - Mezzi e attrezzature",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Mezzi di sollevamento e noleggi in cantiere, guasti, attrezzature mancanti..."},
+  {id:"g-n-mezzi",opz:1,titolo:"Note - Mezzi e attrezzature",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Mezzi di sollevamento e noleggi in cantiere, guasti, attrezzature mancanti..."},
   {id:"g-n-acq",titolo:"Note - Acquisti e spese non previste",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Cosa, perché, importo, chi ha autorizzato..."},
-  {id:"g-n-vis",titolo:"Note - Visite e verifiche",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Committente, DL, coordinatore sicurezza, enti, collaudi, prove..."},
-  {id:"g-n-sic",titolo:"Note - Sicurezza e ambiente",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Infortuni o quasi-incidenti, non conformità, stato delle opere provvisionali..."},
-  {id:"g-n-imp",titolo:"Note - Impedimenti e ritardi",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Causa, durata, squadra coinvolta (solo fatti, con ora e nomi)..."},
+  {id:"g-n-vis",opz:1,titolo:"Note - Visite e verifiche",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Committente, DL, coordinatore sicurezza, enti, collaudi, prove..."},
+  {id:"g-n-sic",opz:1,titolo:"Note - Sicurezza e ambiente",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Infortuni o quasi-incidenti, non conformità, stato delle opere provvisionali..."},
+  {id:"g-n-imp",opz:1,titolo:"Note - Impedimenti e ritardi",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Causa, durata, squadra coinvolta (solo fatti, con ora e nomi)..."},
   {id:"g-n-dom",titolo:"Note - Da fare domani",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Punti aperti da riprendere nel briefing..."},
   {id:"g-note",titolo:"Altre note del giorno",icona:"note",colore:"t-blue",tipo:"note",note_placeholder:"Altro: decisioni prese, osservazioni non classificabili sopra..."}
 ],
@@ -983,14 +984,69 @@ function renderAll(){
   ['giornaliera','settimanale','quindicinale','mensile'].forEach(cad=>{
     const cont=document.getElementById('sections-'+cad);
     cont.innerHTML='';
+    if(cad==='giornaliera'){
+      const bar=document.createElement('div');bar.id='chk-bar';bar.className='card';bar.style.padding='12px 14px';
+      bar.innerHTML=`<div class="row-sub" style="margin:0 0 8px">Registro presenze, tesserini, foto e diario si compilano da soli dai dati inseriti: non devi rispondere.</div><div class="pills"><span class="pill p-na" onclick="chkBulk('na')">Cantiere fermo: le altre voci N/A</span><span class="pill p-ok" onclick="chkBulk('ok')">Le altre voci tutte OK</span></div><div class="row-sub" style="margin:8px 0 0">Riempiono solo le voci ancora senza risposta.</div>`;
+      cont.appendChild(bar);
+    }
     CHECKLISTS[cad].forEach(sec=>cont.appendChild(buildCard(cad,sec)));
+    if(cad==='giornaliera'){const ch=document.createElement('div');ch.id='opz-chips';ch.className='pills';ch.style.cssText='margin:6px 4px 14px;flex-wrap:wrap';cont.appendChild(ch);opzSync();}
   });
+}
+function chkSetPill(vid,stato,note){
+  const row=document.getElementById('row-'+vid);if(!row)return;
+  row.querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
+  const chk=document.getElementById('chk-'+vid);
+  if(stato){const b=row.querySelector('.p-'+stato);if(b)b.classList.add('sel');chk.checked=(stato==='ok'||stato==='na');}else chk.checked=false;
+  const n=document.getElementById('note-'+vid);if(n)n.value=note||'';
+}
+function chkAuto(){
+  if(!document.getElementById('row-g-p1'))return;
+  const cant=gv('g-cantiere'),data=gv('g-data')||prToday();
+  const act=cant?prDay(prKey(cant),data).act:[];
+  chkSetPill('g-p1',act.length?'ok':'');
+  if(!act.length)chkSetPill('g-p2','');
+  else{const no=act.filter(r=>r.tess==='no').map(r=>r.nome);
+    if(no.length)chkSetPill('g-p2','ko','Senza tessera esposta: '+no.join(', '));
+    else if(act.every(r=>r.tess==='na'))chkSetPill('g-p2','na');
+    else chkSetPill('g-p2','ok');}
+  const nf=(photos.giornaliera||[]).length;
+  if(nf>=3)chkSetPill('g-a3','ok',nf+' foto');else if(nf>0)chkSetPill('g-a3','warn','Solo '+nf+(nf===1?' foto':' foto'));else chkSetPill('g-a3','');
+  const diario=gv('g-lavorazioni')||CHECKLISTS.giornaliera.some(sec=>sec.tipo==='note'&&getSecNote(sec.id));
+  chkSetPill('g-a4',diario?'ok':'');
+  CHECKLISTS.giornaliera.forEach(sec=>{if(!sec.tipo)updateBadge(sec.id);});
+}
+function chkBulk(st){
+  chkAuto();
+  document.querySelectorAll('#sections-giornaliera .row:not(.auto-row)').forEach(row=>{
+    if(row.querySelector('.pill.sel'))return;
+    const vid=row.id.replace('row-','');chkSetPill(vid,st,getNoteV(vid));
+  });
+  CHECKLISTS.giornaliera.forEach(sec=>{if(!sec.tipo)updateBadge(sec.id);});
+  saveState();toast(st==='na'?'Voci senza risposta impostate su N/A':'Voci senza risposta impostate su OK');
+}
+function opzSync(){
+  const cont=document.getElementById('sections-giornaliera');if(!cont)return;
+  const chips=[];
+  CHECKLISTS.giornaliera.filter(sec=>sec.opz).forEach(sec=>{
+    const card=document.getElementById('card-'+sec.id),ta=document.getElementById(sec.id+'-note');if(!card)return;
+    if(ta&&ta.value.trim())card.dataset.open='1';
+    card.classList.toggle('opz-off',!card.dataset.open);
+    if(!card.dataset.open)chips.push(`<span class="pill" onclick="opzOpen('${sec.id}')">+ ${esc(sec.titolo.replace(/^Note - /,''))}</span>`);
+  });
+  const ch=document.getElementById('opz-chips');if(ch)ch.innerHTML=chips.length?'<span class="row-sub" style="width:100%;margin:0 0 4px">Altre sezioni:</span>'+chips.join(''):'';
+}
+function opzOpen(id){
+  const card=document.getElementById('card-'+id);if(!card)return;
+  card.dataset.open='1';card.classList.remove('collapsed');opzSync();
+  const ta=document.getElementById(id+'-note');if(ta){ta.scrollIntoView({block:'center'});ta.focus();}
 }
 
 function buildCard(cad,sec){
   const card=document.createElement('div');
   card.className=`card ${sec.colore}`;
   card.id=`card-${sec.id}`;
+  if(sec.opz)card.classList.add('opz-off');
   if(sec.tipo==='note'){
     card.innerHTML=`
       <div class="sec-hdr" onclick="toggleCard('card-${sec.id}')">
@@ -1014,7 +1070,7 @@ function buildCard(cad,sec){
 }
 
 function buildRow(cad,secId,v){
-  return `<div class="row" id="row-${v.id}">
+  return `<div class="row${v.auto?' auto-row':''}" id="row-${v.id}">
     <div class="chk-wrap">
       <input type="checkbox" id="chk-${v.id}" onchange="onCheck('${cad}','${secId}','${v.id}')">
       <div class="chk-ring">
@@ -1030,7 +1086,7 @@ function buildRow(cad,secId,v){
         <span class="pill p-ko" onclick="setPill('${v.id}','ko',this)">✕ Non OK</span>
         <span class="pill p-na" onclick="setPill('${v.id}','na',this)">N/A</span>
       </div>
-      <textarea class="note" id="note-${v.id}" placeholder="Note opzionali..." oninput="saveState()" style="min-height:44px;"></textarea>
+      <textarea class="note" id="note-${v.id}" placeholder="${v.ph||'Note opzionali...'}" oninput="saveState()" style="min-height:44px;"></textarea>
     </div>
   </div>`;
 }
@@ -1067,6 +1123,7 @@ function showPane(name){
   if(name==='rfi'&&typeof rfiShow==='function')rfiShow();
   if(name==='presenze'&&typeof prRender==='function')prRender();
   if(name==='briefing'&&typeof brShow==='function')brShow();
+  if(name==='giornaliera'&&typeof chkAuto==='function')chkAuto();
   if(name==='storico'&&typeof rdRender==='function'){rdRender();brSavedRender();dvLoad();}
   document.querySelector('.tab[data-p="'+tp+'"]')?.classList.add('active');
 }
@@ -1103,6 +1160,7 @@ function saveState(){
     });
     sessionStorage.setItem('smcl',JSON.stringify(s));
   }catch(e){}
+  if(typeof opzSync==='function')opzSync();
 }
 
 function loadState(){
@@ -1117,6 +1175,7 @@ function loadState(){
       if(!s[cad])return;
       const cont=document.getElementById('sections-'+cad);if(!cont)return;
       cont.querySelectorAll('input[type=checkbox]').forEach(c=>{if(s[cad][c.id]!==undefined)c.checked=s[cad][c.id];});
+      if(cad==='giornaliera')gMigra(s[cad]);
       cont.querySelectorAll('textarea').forEach(t=>{if(s[cad][t.id]!==undefined)t.value=s[cad][t.id];});
       Object.keys(s[cad]).forEach(k=>{
         if(!k.startsWith('pill-'))return;
@@ -1425,14 +1484,15 @@ function genReport(){
   if(currentRepType==='giornaliero'){
     cadKey='giornaliera';
     cant=gv('g-cantiere')||'[cantiere]';
+    chkAuto();
     const data=gv('g-data'),meteo=gv('g-meteo'),temp=gv('g-temp'),lav=gv('g-lavorazioni');
     const{total,done}=getCnt('giornaliera');
     meta=[['Destinatario',dest],['Cantiere',cant],['Data',data],['Meteo',meteo+(temp?' — '+temp+'°C':'')],['Check-list',`${done}/${total} (${Math.round(done/total*100)||0}%)`]];
     if(lav)meta.push(['Lavorazioni',lav]);
     sections=CHECKLISTS.giornaliera.filter(s=>!s.tipo).map(sec=>({
       title:sec.titolo,score:null,
-      items:sec.voci.map(v=>({label:v.testo+(v.sub?' — '+v.sub:''),value:getStatoPill(v.id)||'—',note:getNoteV(v.id)}))
-    }));
+      items:sec.voci.map(v=>({label:v.testo+(v.sub?' — '+v.sub:''),value:getStatoPill(v.id)||'—',note:getNoteV(v.id)})).filter(it=>it.value!=='—'||it.note)
+    })).filter(sec=>sec.items.length);
     const nx={};CHECKLISTS.giornaliera.filter(s=>s.tipo==='note').forEach(sec=>{const t=getSecNote(sec.id);if(t)nx[sec.id]=t;});
     const iss=[];CHECKLISTS.giornaliera.filter(s=>!s.tipo).forEach(sec=>sec.voci.forEach(v=>{const st=getStatoPill(v.id);if(st==='⚠'||st==='✕')iss.push({s:sec.titolo,v:v.testo,st,n:getNoteV(v.id)});}));
     const sv=snapSave(gv('g-cantiere'),data,{meteo,temp,lav,done,total,iss,note:getSecNote('g-note'),nx:nx,foto:(photos.giornaliera||[]).length,form:gFormGet()});
@@ -1936,6 +1996,50 @@ function prAutofill(){
   if(!gv('p-qual'))pe('p-qual').value=last.qual||'';
   if(!prEditId){pe('p-tipo').value=last.tipo;pe('p-tess').value=last.tess;}
 }
+function prPrevDay(ck,data){
+  let best='';PR.records.forEach(r=>{if(r.ck===ck&&!r.ann&&r.data<data&&r.data>best)best=r.data;});return best;
+}
+function prCopyOpen(){
+  const c=prCtx(),pv=prPrevDay(c.ck,c.data);if(!pv)return;
+  const d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const here=new Set(d.act.map(r=>prKey(r.nome)));
+  const L=prDay(c.ck,pv).act.filter(r=>!here.has(prKey(r.nome)));
+  if(!L.length){toast('Tutte le persone del '+prFmtD(pv)+' sono già presenti');return;}
+  const old=pe('cp-box');if(old)old.remove();
+  const box=document.createElement('div');box.id='cp-box';
+  box.style.cssText='position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center';
+  box.innerHTML=`<div style="background:var(--card);color:var(--label);width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;border-radius:16px 16px 0 0"><div style="padding:14px 16px;border-bottom:.5px solid var(--sep);font-weight:700">Copia le presenze del ${esc(prFmtD(pv))}</div><div style="padding:8px 16px;font-size:13px;color:var(--label2)">Togli la spunta a chi oggi non c'è. L'ingresso resta quello del giorno prima, l'uscita va inserita (o usa "Esci tutti").</div><div style="overflow-y:auto;flex:1">`+
+   L.map((r,i)=>`<label style="display:flex;gap:10px;align-items:center;padding:10px 16px;border-bottom:.5px solid var(--sep2)"><input type="checkbox" checked data-r="${esc(r.id)}" style="width:20px;height:20px"><span style="flex:1"><b>${esc(r.nome)}</b><br><span style="font-size:12px;color:var(--label2)">${esc(r.impresa||'')} · ${esc(r.qual||prTipo(r.tipo).l)} · ing. ${esc(r.ing||'—')}</span></span></label>`).join('')+
+   `</div><div style="display:flex;gap:8px;padding:12px 16px"><button class="btn btn-ghost" style="flex:1" onclick="pe('cp-box').remove()">Annulla</button><button class="btn btn-blue" style="flex:1" onclick="prCopyDo('${esc(pv)}')">Copia selezionati</button></div></div>`;
+  document.body.appendChild(box);
+}
+function prCopyDo(pv){
+  const c=prCtx(),d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const ids=new Set([...document.querySelectorAll('#cp-box input[type=checkbox]:checked')].map(x=>x.dataset.r));
+  const by=gv('p-compilatore'),here=new Set(d.act.map(r=>prKey(r.nome)));let n=0;
+  prDay(c.ck,pv).act.forEach(r=>{
+    if(!ids.has(r.id)||here.has(prKey(r.nome)))return;
+    PR.records.push({id:prId('r'),ck:c.ck,cant:c.cant,data:c.data,ts:new Date().toISOString(),by,nome:r.nome,impresa:r.impresa,qual:r.qual,tipo:r.tipo,ing:r.ing||'',usc:'',pausa:r.pausa||0,tess:r.tess,note:''});n++;
+  });
+  const bx=pe('cp-box');if(bx)bx.remove();
+  if(n){prSave();prRender();}
+  toast(n?n+(n===1?' presenza copiata':' presenze copiate')+' dal '+prFmtD(pv):'Nessuna presenza copiata');
+}
+function prExitAll(){
+  const c=prCtx(),d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const open=d.act.filter(r=>r.ing&&!r.usc);if(!open.length){toast('Nessuno senza uscita');return;}
+  const t=prompt('Ora di uscita per le '+open.length+' persone ancora in cantiere (HH:MM):',c.data===prToday()?prNow():'17:00');
+  if(!t)return;
+  const m=t.trim().replace('.',':').match(/^(\d{1,2}):(\d{2})$/);
+  if(!m||+m[1]>23||+m[2]>59){toast('Ora non valida: usa il formato HH:MM');return;}
+  const usc=String(m[1]).padStart(2,'0')+':'+m[2],by=gv('p-compilatore');let n=0,sk=[];
+  open.forEach(r=>{
+    if(prMin(usc)<=prMin(r.ing)){sk.push(r.nome);return;}
+    r.rev=(r.rev||[]).concat([{ts:new Date().toISOString(),by,prima:{usc:''}}]);r.usc=usc;n++;
+  });
+  if(n){prSave();prRender();}
+  toast(n+(n===1?' uscita registrata':' uscite registrate')+' alle '+usc+(sk.length?' - saltati (ingresso dopo l\'uscita): '+sk.join(', '):''));
+}
 function prAdd(){
   const c=prCtx();
   if(!c.cant){toast('Indica il cantiere');pe('p-cantiere').focus();return;}
@@ -2164,7 +2268,12 @@ function prActionsHtml(c,d){
   const b=(label,fn,cls)=>`<button class="btn ${cls||'btn-ghost'}" style="padding:11px 16px;font-size:14px" onclick="${fn}">${label}</button>`;
   let h='';
   if(d.lock)h+=b('Riapri giornata','prUnlock()')+b('Verifica integrità','prVerify()');
-  else h+=b('Chiudi giornata','prLock()','btn-green');
+  else{
+    const pv=prPrevDay(c.ck,c.data);
+    if(pv)h+=b('Copia dal '+prFmtD(pv),'prCopyOpen()');
+    if(d.act.some(r=>r.ing&&!r.usc))h+=b('Esci tutti','prExitAll()');
+    h+=b('Chiudi giornata','prLock()','btn-green');
+  }
   h+=b('Esporta CSV','prCsv()')+b('Backup','prBackup(false)')+b('Importa','pe(\'pr-import\').click()');
   h+='<input type="file" id="pr-import" accept="application/json,.json" onchange="prImport(this)">';
   return h;
@@ -2502,11 +2611,12 @@ function brCur(create){
 function brTouch(b){b.upd=new Date().toISOString();b.cant=BRX.cant||b.cant;prSave();}
 function brInit(){
   try{brOff=new Set(JSON.parse(localStorage.getItem('smBrOff')||'[]'));}catch(e){}
-  BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');
+  BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');BRX.auto=true;
   pe('br-cantiere').value=BRX.cant;pe('br-data').value=BRX.data;
   brLbl();brRender();brDestRender();
 }
 function brShow(){
+  if(BRX.auto&&BRX.tipo!=='m'){const nd=brDefDate(BRX.tipo);if(nd!==BRX.data){BRX.data=nd;pe('br-data').value=nd;brLbl();}}
   if(!gv('br-cantiere')&&gv('g-cantiere')){pe('br-cantiere').value=gv('g-cantiere');brCtx();}
   else{brRender();}
   brDestRender();
@@ -2516,10 +2626,11 @@ function brLbl(){
   pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');pe('br-tm').classList.toggle('active',BRX.tipo==='m');
   calMode(BRX.tipo==='m');
 }
-function brTipo(t){BRX.tipo=t;if(t!=='m'){BRX.data=brDefDate(t);pe('br-data').value=BRX.data;}brLbl();brRender();}
+function brTipo(t){BRX.tipo=t;if(t!=='m'){BRX.data=brDefDate(t);BRX.auto=true;pe('br-data').value=BRX.data;}brLbl();brRender();}
 function brCtx(){
   BRX.cant=gv('br-cantiere');
   if(BRX.tipo==='m'){calRender();return;}
+  if(gv('br-data')&&gv('br-data')!==BRX.data)BRX.auto=false;
   let d=gv('br-data')||brDefDate(BRX.tipo);
   if(BRX.tipo==='s'){d=brMon(d);pe('br-data').value=d;}
   BRX.data=d;brLbl();brRender();
@@ -2559,7 +2670,7 @@ function brMove(){
   const now=new Date().toISOString();
   PR.briefs[b.k]={k:b.k,ck:b.ck,cant:b.cant,tipo:b.tipo,data:b.data,sq:[],att:[],mat:[],note:'',todo:'',upd:now};
   b.k=nk;b.data=d;b.upd=now;PR.briefs[nk]=b;prSave();
-  BRX.data=d;pe('br-data').value=d;brLbl();brRender();
+  BRX.data=d;BRX.auto=false;pe('br-data').value=d;brLbl();brRender();
   toast('Briefing spostato al '+prFmtD(d)+(b.tipo==='s'?' (lunedì della settimana)':'')+': rigenera il PDF');
 }
 function brSavedRender(){
@@ -2572,7 +2683,7 @@ function brSavedRender(){
 }
 function brOpenSaved(k){
   const b=PR.briefs[k];if(!b){toast('Briefing non trovato');return;}
-  BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+  BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;BRX.auto=false;
   pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;
   showPane('briefing');brLbl();brRender();brDestRender();
   window.scrollTo(0,0);toast('Briefing riaperto: modifica e rigenera il PDF');
@@ -2913,7 +3024,7 @@ function calReset(){
 function calToBrief(){
   const d=calSelDays()[0];if(calSelDays().length!==1)return;
   const its=(calByDay()[d]||[]);if(!its.length)return;
-  BRX.tipo='g';BRX.data=d;const b=brCur(true);
+  BRX.tipo='g';BRX.data=d;BRX.auto=false;const b=brCur(true);
   const ex=new Set();b.sq.forEach(s=>s.lav.forEach(l=>ex.add(l.testo.trim().toLowerCase())));
   const nuove=[...new Set(its.map(i=>i.t.trim()))].filter(t=>!ex.has(t.toLowerCase()));
   if(nuove.length)b.sq.push({id:brUid(),nome:'',capo:'',lav:nuove.map(t=>({id:brUid(),giorno:'0',testo:t,luogo:'',chi:'',istr:''}))});
@@ -3363,7 +3474,13 @@ function gFormGet(){
   cont.querySelectorAll('.pill.sel').forEach(p=>{const vid=gPillVid(p);if(vid)f.pills[vid]=[...p.classList].find(c=>c.startsWith('p-'));});
   return f;
 }
+function gMigra(ta){
+  // vecchio campo "Note - Consegne e materiali" ora unito alla voce "Materiali consegnati"
+  if(ta&&ta['g-n-cons-note']){const o=ta['note-g-m1']||'';ta['note-g-m1']=o?o+'\n'+ta['g-n-cons-note']:ta['g-n-cons-note'];delete ta['g-n-cons-note'];}
+  return ta;
+}
 function gFormSet(f){
+  if(f&&f.ta)f.ta=gMigra(Object.assign({},f.ta));
   [['g-cantiere','cant'],['g-data','data'],['g-meteo','meteo'],['g-temp','temp'],['g-lavorazioni','lav']].forEach(([id,k])=>{const el=pe(id);if(el)el.value=f[k]||'';});
   const cont=document.getElementById('sections-giornaliera');if(!cont)return;
   cont.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=!!(f.cb&&f.cb[c.id]);});
@@ -3371,7 +3488,7 @@ function gFormSet(f){
   cont.querySelectorAll('.pill.sel').forEach(p=>p.classList.remove('sel'));
   Object.keys(f.pills||{}).forEach(vid=>{const row=document.getElementById('row-'+vid);if(!row)return;const b=row.querySelector('.'+f.pills[vid]);if(b)b.classList.add('sel');});
   CHECKLISTS.giornaliera.forEach(sec=>{if(!sec.tipo)updateBadge(sec.id);});
-  saveState();
+  opzSync();chkAuto();saveState();
 }
 // ── ELENCO REPORT SU DRIVE (apri / riapri per modifica) ──
 let dvFiles=null,dvBusy=false,DV={};
@@ -3437,7 +3554,7 @@ function dvReopen(){
     const b=e.b;if(!b||!b.k)return;
     if(PR.briefs[b.k]&&!confirm('Esiste già un briefing per questa data: sostituirlo con quello del PDF?'))return;
     b.upd=new Date().toISOString();PR.briefs[b.k]=b;prSave();
-    BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+    BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;BRX.auto=false;
     pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;brLbl();
     showPane('briefing');brRender();
     toast('Briefing riaperto: modifica e rigenera il PDF');
