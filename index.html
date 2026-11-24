@@ -1936,6 +1936,50 @@ function prAutofill(){
   if(!gv('p-qual'))pe('p-qual').value=last.qual||'';
   if(!prEditId){pe('p-tipo').value=last.tipo;pe('p-tess').value=last.tess;}
 }
+function prPrevDay(ck,data){
+  let best='';PR.records.forEach(r=>{if(r.ck===ck&&!r.ann&&r.data<data&&r.data>best)best=r.data;});return best;
+}
+function prCopyOpen(){
+  const c=prCtx(),pv=prPrevDay(c.ck,c.data);if(!pv)return;
+  const d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const here=new Set(d.act.map(r=>prKey(r.nome)));
+  const L=prDay(c.ck,pv).act.filter(r=>!here.has(prKey(r.nome)));
+  if(!L.length){toast('Tutte le persone del '+prFmtD(pv)+' sono già presenti');return;}
+  const old=pe('cp-box');if(old)old.remove();
+  const box=document.createElement('div');box.id='cp-box';
+  box.style.cssText='position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center';
+  box.innerHTML=`<div style="background:var(--card);color:var(--label);width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;border-radius:16px 16px 0 0"><div style="padding:14px 16px;border-bottom:.5px solid var(--sep);font-weight:700">Copia le presenze del ${esc(prFmtD(pv))}</div><div style="padding:8px 16px;font-size:13px;color:var(--label2)">Togli la spunta a chi oggi non c'è. L'ingresso resta quello del giorno prima, l'uscita va inserita (o usa "Esci tutti").</div><div style="overflow-y:auto;flex:1">`+
+   L.map((r,i)=>`<label style="display:flex;gap:10px;align-items:center;padding:10px 16px;border-bottom:.5px solid var(--sep2)"><input type="checkbox" checked data-r="${esc(r.id)}" style="width:20px;height:20px"><span style="flex:1"><b>${esc(r.nome)}</b><br><span style="font-size:12px;color:var(--label2)">${esc(r.impresa||'')} · ${esc(r.qual||prTipo(r.tipo).l)} · ing. ${esc(r.ing||'—')}</span></span></label>`).join('')+
+   `</div><div style="display:flex;gap:8px;padding:12px 16px"><button class="btn btn-ghost" style="flex:1" onclick="pe('cp-box').remove()">Annulla</button><button class="btn btn-blue" style="flex:1" onclick="prCopyDo('${esc(pv)}')">Copia selezionati</button></div></div>`;
+  document.body.appendChild(box);
+}
+function prCopyDo(pv){
+  const c=prCtx(),d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const ids=new Set([...document.querySelectorAll('#cp-box input[type=checkbox]:checked')].map(x=>x.dataset.r));
+  const by=gv('p-compilatore'),here=new Set(d.act.map(r=>prKey(r.nome)));let n=0;
+  prDay(c.ck,pv).act.forEach(r=>{
+    if(!ids.has(r.id)||here.has(prKey(r.nome)))return;
+    PR.records.push({id:prId('r'),ck:c.ck,cant:c.cant,data:c.data,ts:new Date().toISOString(),by,nome:r.nome,impresa:r.impresa,qual:r.qual,tipo:r.tipo,ing:r.ing||'',usc:'',pausa:r.pausa||0,tess:r.tess,note:''});n++;
+  });
+  const bx=pe('cp-box');if(bx)bx.remove();
+  if(n){prSave();prRender();}
+  toast(n?n+(n===1?' presenza copiata':' presenze copiate')+' dal '+prFmtD(pv):'Nessuna presenza copiata');
+}
+function prExitAll(){
+  const c=prCtx(),d=prDay(c.ck,c.data);if(d.lock){toast('Giornata chiusa');return;}
+  const open=d.act.filter(r=>r.ing&&!r.usc);if(!open.length){toast('Nessuno senza uscita');return;}
+  const t=prompt('Ora di uscita per le '+open.length+' persone ancora in cantiere (HH:MM):',c.data===prToday()?prNow():'17:00');
+  if(!t)return;
+  const m=t.trim().replace('.',':').match(/^(\d{1,2}):(\d{2})$/);
+  if(!m||+m[1]>23||+m[2]>59){toast('Ora non valida: usa il formato HH:MM');return;}
+  const usc=String(m[1]).padStart(2,'0')+':'+m[2],by=gv('p-compilatore');let n=0,sk=[];
+  open.forEach(r=>{
+    if(prMin(usc)<=prMin(r.ing)){sk.push(r.nome);return;}
+    r.rev=(r.rev||[]).concat([{ts:new Date().toISOString(),by,prima:{usc:''}}]);r.usc=usc;n++;
+  });
+  if(n){prSave();prRender();}
+  toast(n+(n===1?' uscita registrata':' uscite registrate')+' alle '+usc+(sk.length?' - saltati (ingresso dopo l\'uscita): '+sk.join(', '):''));
+}
 function prAdd(){
   const c=prCtx();
   if(!c.cant){toast('Indica il cantiere');pe('p-cantiere').focus();return;}
@@ -2164,7 +2208,12 @@ function prActionsHtml(c,d){
   const b=(label,fn,cls)=>`<button class="btn ${cls||'btn-ghost'}" style="padding:11px 16px;font-size:14px" onclick="${fn}">${label}</button>`;
   let h='';
   if(d.lock)h+=b('Riapri giornata','prUnlock()')+b('Verifica integrità','prVerify()');
-  else h+=b('Chiudi giornata','prLock()','btn-green');
+  else{
+    const pv=prPrevDay(c.ck,c.data);
+    if(pv)h+=b('Copia dal '+prFmtD(pv),'prCopyOpen()');
+    if(d.act.some(r=>r.ing&&!r.usc))h+=b('Esci tutti','prExitAll()');
+    h+=b('Chiudi giornata','prLock()','btn-green');
+  }
   h+=b('Esporta CSV','prCsv()')+b('Backup','prBackup(false)')+b('Importa','pe(\'pr-import\').click()');
   h+='<input type="file" id="pr-import" accept="application/json,.json" onchange="prImport(this)">';
   return h;
@@ -2502,11 +2551,12 @@ function brCur(create){
 function brTouch(b){b.upd=new Date().toISOString();b.cant=BRX.cant||b.cant;prSave();}
 function brInit(){
   try{brOff=new Set(JSON.parse(localStorage.getItem('smBrOff')||'[]'));}catch(e){}
-  BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');
+  BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');BRX.auto=true;
   pe('br-cantiere').value=BRX.cant;pe('br-data').value=BRX.data;
   brLbl();brRender();brDestRender();
 }
 function brShow(){
+  if(BRX.auto&&BRX.tipo!=='m'){const nd=brDefDate(BRX.tipo);if(nd!==BRX.data){BRX.data=nd;pe('br-data').value=nd;brLbl();}}
   if(!gv('br-cantiere')&&gv('g-cantiere')){pe('br-cantiere').value=gv('g-cantiere');brCtx();}
   else{brRender();}
   brDestRender();
@@ -2516,10 +2566,11 @@ function brLbl(){
   pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');pe('br-tm').classList.toggle('active',BRX.tipo==='m');
   calMode(BRX.tipo==='m');
 }
-function brTipo(t){BRX.tipo=t;if(t!=='m'){BRX.data=brDefDate(t);pe('br-data').value=BRX.data;}brLbl();brRender();}
+function brTipo(t){BRX.tipo=t;if(t!=='m'){BRX.data=brDefDate(t);BRX.auto=true;pe('br-data').value=BRX.data;}brLbl();brRender();}
 function brCtx(){
   BRX.cant=gv('br-cantiere');
   if(BRX.tipo==='m'){calRender();return;}
+  if(gv('br-data')&&gv('br-data')!==BRX.data)BRX.auto=false;
   let d=gv('br-data')||brDefDate(BRX.tipo);
   if(BRX.tipo==='s'){d=brMon(d);pe('br-data').value=d;}
   BRX.data=d;brLbl();brRender();
@@ -2559,7 +2610,7 @@ function brMove(){
   const now=new Date().toISOString();
   PR.briefs[b.k]={k:b.k,ck:b.ck,cant:b.cant,tipo:b.tipo,data:b.data,sq:[],att:[],mat:[],note:'',todo:'',upd:now};
   b.k=nk;b.data=d;b.upd=now;PR.briefs[nk]=b;prSave();
-  BRX.data=d;pe('br-data').value=d;brLbl();brRender();
+  BRX.data=d;BRX.auto=false;pe('br-data').value=d;brLbl();brRender();
   toast('Briefing spostato al '+prFmtD(d)+(b.tipo==='s'?' (lunedì della settimana)':'')+': rigenera il PDF');
 }
 function brSavedRender(){
@@ -2572,7 +2623,7 @@ function brSavedRender(){
 }
 function brOpenSaved(k){
   const b=PR.briefs[k];if(!b){toast('Briefing non trovato');return;}
-  BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+  BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;BRX.auto=false;
   pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;
   showPane('briefing');brLbl();brRender();brDestRender();
   window.scrollTo(0,0);toast('Briefing riaperto: modifica e rigenera il PDF');
@@ -2913,7 +2964,7 @@ function calReset(){
 function calToBrief(){
   const d=calSelDays()[0];if(calSelDays().length!==1)return;
   const its=(calByDay()[d]||[]);if(!its.length)return;
-  BRX.tipo='g';BRX.data=d;const b=brCur(true);
+  BRX.tipo='g';BRX.data=d;BRX.auto=false;const b=brCur(true);
   const ex=new Set();b.sq.forEach(s=>s.lav.forEach(l=>ex.add(l.testo.trim().toLowerCase())));
   const nuove=[...new Set(its.map(i=>i.t.trim()))].filter(t=>!ex.has(t.toLowerCase()));
   if(nuove.length)b.sq.push({id:brUid(),nome:'',capo:'',lav:nuove.map(t=>({id:brUid(),giorno:'0',testo:t,luogo:'',chi:'',istr:''}))});
@@ -3437,7 +3488,7 @@ function dvReopen(){
     const b=e.b;if(!b||!b.k)return;
     if(PR.briefs[b.k]&&!confirm('Esiste già un briefing per questa data: sostituirlo con quello del PDF?'))return;
     b.upd=new Date().toISOString();PR.briefs[b.k]=b;prSave();
-    BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;
+    BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;BRX.auto=false;
     pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;brLbl();
     showPane('briefing');brRender();
     toast('Briefing riaperto: modifica e rigenera il PDF');
