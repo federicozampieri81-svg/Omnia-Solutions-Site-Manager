@@ -122,6 +122,7 @@ body::before{content:"";position:fixed;inset:0;z-index:120;pointer-events:none;b
 .form-row{display:flex;align-items:center;padding:13px 14px;border-bottom:.5px solid var(--sep2);min-height:50px;gap:10px}
 .form-row:last-child{border-bottom:none}
 .form-lbl{font-size:16px;color:var(--label);min-width:100px;flex-shrink:0}
+.br-imgs{margin-top:8px}.br-th{display:flex;gap:8px;align-items:center;margin-top:6px}.br-th img{width:84px;height:64px;object-fit:cover;border-radius:6px;border:.5px solid var(--sep);flex:none}.br-th .br-in{flex:1;min-width:0}
 .row.auto-row{display:none}
 .opz-off{display:none}
 .nomi-dd{position:absolute;left:0;right:0;top:100%;z-index:60;max-height:55vh;overflow-y:auto;background:var(--card);border:.5px solid var(--sep);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.22);margin-top:2px;-webkit-overflow-scrolling:touch}
@@ -1661,6 +1662,20 @@ function buildPdfReport({title,subtitle,meta,sections,actions,photos,filenamePre
     checkPage(sec.table?34:26);   // intestazione mai isolata dal contenuto
     header(sec.title+(sec.score?'   '+sec.score:''));
     if(sec.table)drawTable(sec.table);
+    if(sec.figs)sec.figs.forEach(fg=>{
+      checkPage(30);y+=2;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(60,60,65);
+      doc.splitTextToSize(fg.head,CW).forEach(t=>{doc.text(t,MX,y);y+=4.4;});
+      fg.imgs.forEach(im=>{
+        let w=CW,h=CW*0.6;
+        try{const ip=doc.getImageProperties(im.dataUrl),r=ip.width/ip.height;h=w/r;if(h>115){h=115;w=h*r;}}catch(e){}
+        checkPage(h+(im.cap?9:5));
+        const ix=MX+(CW-w)/2;
+        try{doc.addImage(im.dataUrl,'JPEG',ix,y,w,h);}catch(e){}
+        doc.setDrawColor(210,210,215);doc.setLineWidth(.2);doc.rect(ix,y,w,h);y+=h+4;
+        if(im.cap){doc.setFont('helvetica','italic');doc.setFontSize(8.5);doc.setTextColor(90,90,95);doc.splitTextToSize(im.cap,CW).forEach(t=>{doc.text(t,MX,y);y+=4;});y+=1;}
+        y+=2;
+      });
+    });
     sec.items.forEach(it=>{
       const st=STAT[it.value];
       const valTxt=it.value?(st?st[0]:String(it.value)):'';
@@ -2477,7 +2492,7 @@ function prSanitize(s){
   if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};});
   o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
-    ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(l&&!PR_IDOK.test(l.id||''))l.id=brUid();});}});});
+    ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(!l)return;if(!PR_IDOK.test(l.id||''))l.id=brUid();if(l.img){l.img=arr(l.img).filter(m=>m&&typeof m.d==='string'&&m.d.startsWith('data:image/jpeg;base64,')).slice(0,3).map(m=>({id:PR_IDOK.test(m.id||'')?m.id:brUid(),d:m.d,cap:String(m.cap||'').slice(0,120)}));if(!l.img.length)delete l.img;}});}});});
     o.briefs[k]=b;});
   o.vis={};Object.keys(s.vis||{}).forEach(k=>{const v=s.vis[k];if(v&&typeof v==='object'&&typeof v.testo==='string')o.vis[k]={k:String(v.k||k),ck:String(v.ck||''),cant:String(v.cant||''),data:String(v.data||''),testo:v.testo.slice(0,4000),upd:String(v.upd||'')};});
   o.snap=(s.snap&&typeof s.snap==='object')?s.snap:{};o.locks=(s.locks&&typeof s.locks==='object')?s.locks:{};o.log=arr(s.log);
@@ -2610,9 +2625,41 @@ function brCur(create){
   if(!b&&create){b=PR.briefs[k]={k,ck:prKey(BRX.cant),cant:BRX.cant,tipo:BRX.tipo,data:BRX.data,sq:[],att:[],mat:[],note:'',todo:'',upd:new Date().toISOString()};}
   return b;
 }
+const BR_IMG_MAX=3;
+function brImgUi(sid,l){
+  const im=l.img||[];
+  return `<div class="br-imgs">`+im.map(x=>`<div class="br-th"><img src="${x.d}" alt="Immagine"><button class="br-x" onclick="brImgDel('${sid}','${l.id}','${x.id}')">Rimuovi</button><input class="br-in" placeholder="Didascalia (opz.)" value="${esc(x.cap||'')}" oninput="brImgCap('${sid}','${l.id}','${x.id}',this.value)"></div>`).join('')+
+   (im.length<BR_IMG_MAX?`<label class="pill" style="margin-top:6px;display:inline-block">+ Immagine (${im.length}/${BR_IMG_MAX})<input type="file" accept="image/*" hidden onchange="brImgAdd('${sid}','${l.id}',this)"></label>`:`<div class="row-sub">Massimo ${BR_IMG_MAX} immagini per lavorazione</div>`)+`</div>`;
+}
+function brLavOf(b,sid,lid){const q=b&&b.sq.find(x=>x.id===sid);return q&&q.lav.find(x=>x.id===lid);}
+function brImgAdd(sid,lid,input){
+  const f=input.files&&input.files[0];input.value='';if(!f)return;
+  const b=brCur(true),l=brLavOf(b,sid,lid);if(!l)return;
+  l.img=l.img||[];if(l.img.length>=BR_IMG_MAX){toast('Massimo '+BR_IMG_MAX+' immagini');return;}
+  const rd=new FileReader();
+  rd.onload=e=>{const im=new Image();im.onload=()=>{
+    const M=1400;let w=im.width,h=im.height;if(w>M||h>M){if(w>h){h=Math.round(h*M/w);w=M;}else{w=Math.round(w*M/h);h=M;}}
+    const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(im,0,0,w,h);
+    const x={id:brUid(),d:c.toDataURL('image/jpeg',0.78),cap:''};
+    l.img.push(x);
+    try{localStorage.setItem(PR_KEY,JSON.stringify(PR));}
+    catch(er){l.img.pop();alert('Memoria del browser piena: immagine non aggiunta. Elimina immagini da briefing vecchi o riduci il numero di immagini.');brRender();return;}
+    brTouch(b);brRender();toast('Immagine aggiunta ('+Math.round(x.d.length*0.75/1024)+' KB)');
+  };im.onerror=()=>toast('Immagine non leggibile');im.src=e.target.result;};
+  rd.readAsDataURL(f);
+}
+function brImgDel(sid,lid,iid){const b=brCur(false),l=brLavOf(b,sid,lid);if(!l)return;l.img=(l.img||[]).filter(x=>x.id!==iid);brTouch(b);brRender();}
+function brImgCap(sid,lid,iid,v){const b=brCur(false),l=brLavOf(b,sid,lid),x=l&&(l.img||[]).find(y=>y.id===iid);if(x){x.cap=v.slice(0,120);brTouch(b);}}
+// le immagini dei briefing vecchi (oltre 30 giorni) vengono tolte per non riempire la memoria: restano i testi
+function brPruneImg(){
+  const lim=brIso(new Date(Date.now()-30*864e5));let n=0;
+  Object.values(PR.briefs||{}).forEach(b=>{if(b&&b.data&&b.data<lim)(b.sq||[]).forEach(q=>(q.lav||[]).forEach(l=>{if(l.img&&l.img.length){delete l.img;n++;}}));});
+  if(n)prSaveLocal();
+}
 function brTouch(b){b.upd=new Date().toISOString();b.cant=BRX.cant||b.cant;prSave();}
 function brInit(){
   try{brOff=new Set(JSON.parse(localStorage.getItem('smBrOff')||'[]'));}catch(e){}
+  brPruneImg();
   BRX.cant=gv('g-cantiere');BRX.tipo='g';BRX.data=brDefDate('g');BRX.auto=true;
   pe('br-cantiere').value=BRX.cant;pe('br-data').value=BRX.data;
   brLbl();brRender();brDestRender();
@@ -2713,7 +2760,8 @@ function brRender(){
       ${wk?`<select class="br-in" style="margin-top:6px" onchange="brEdit('sq','${s.id}','giorno',this.value,'${l.id}')">${BR_GG.map((g,k)=>`<option value="${k}"${String(l.giorno||'0')===String(k)?' selected':''}>${g}</option>`).join('')}</select>`:''}
       <div style="margin-top:6px">${T(l.testo,'Cosa si fa (es. Montaggio telai asse C, piano 1)',`brEdit('sq','${s.id}','testo',this.value,'${l.id}')`)}</div>
       <div class="br-g">${I(l.luogo,'Dove (livello / zona, es. Piano 1 - Monte)',`brEdit('sq','${s.id}','luogo',this.value,'${l.id}')`)}${I(l.chi,'Chi (operatore / referente)',`brEdit('sq','${s.id}','chi',this.value,'${l.id}')`)}</div>
-      <div style="margin-top:6px">${T(l.istr,'Istruzioni chiare: come, con quali mezzi, sicurezza, punti di attenzione',`brEdit('sq','${s.id}','istr',this.value,'${l.id}')`)}</div></div>`).join('')}
+      <div style="margin-top:6px">${T(l.istr,'Istruzioni chiare: come, con quali mezzi, sicurezza, punti di attenzione',`brEdit('sq','${s.id}','istr',this.value,'${l.id}')`)}</div>
+      ${brImgUi(s.id,l)}</div>`).join('')}
     <div class="br-it"><span class="pill" onclick="brAddItem('lav','${s.id}')">+ Aggiungi lavorazione</span></div></div>`).join('');
   h+=`<div class="btn-row" style="margin-top:0;margin-bottom:6px"><button class="btn btn-ghost btn-sm" onclick="brAddItem('sq')">+ Aggiungi squadra</button></div>`;
 
@@ -2803,14 +2851,16 @@ function brPdf(){
   const td=(b.todo||'').split('\n').map(x=>x.trim()).filter(Boolean);
   if(td.length)sections.push({title:'Da fare - Site manager',score:null,items:td.map((x,i)=>({label:x,value:'',note:''}))});
   const lav={title:'Lavorazioni concordate con le squadre',score:null,items:[]};
-  const rows=[];let n=0;
+  const rows=[],figs=[];let n=0;
   b.sq.forEach(s=>{
     const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
     rows.push({group:(s.nome||'Squadra')+(s.capo?'  -  Referente: '+s.capo:'')});
-    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']));
+    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>{rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']);
+      if((l.img||[]).length)figs.push({head:'Lavorazione '+n+' - '+l.testo.trim().slice(0,80),imgs:l.img.map(x=>({dataUrl:x.d,cap:x.cap||''}))});});
   });
   if(rows.length)lav.table=wk?{head:['N.','Giorno','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,22,36,26,22,64],rows}:{head:['N.','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,44,30,26,70],rows};
   else lav.items.push({label:'Nessuna lavorazione inserita.',value:'',note:''});
+  if(figs.length)lav.figs=figs;
   sections.push(lav);
   const at=b.att.filter(a=>a.testo.trim());
   const sa={title:'Attrezzature mancanti',score:null,items:[]};
@@ -2826,11 +2876,12 @@ function brPdf(){
     title:wk?'Briefing Capisquadra - Settimanale':'Briefing Capisquadra - Giornaliero',subtitle:b.cant,meta,sections,actions:null,photos:[],
     footnote:'',target:'br-out',previewNote:'Briefing in PDF, pronto da inviare a squadre e direzione',
     filenamePrefix:`${b.data}_Briefing-${wk?'Settimanale':'Giornaliero'}_${b.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)}`,
-    embed:{k:'br',b},
+    embed:{k:'br',b:brNoImg(b)},
     onBlob:(blob,fn)=>{brLast={blob,fn,k:b.k,upd:b.upd};}
   });
   return true;
 }
+function brNoImg(b){const c=JSON.parse(JSON.stringify(b));(c.sq||[]).forEach(q=>(q.lav||[]).forEach(l=>{if(l.img)l.img=l.img.map(x=>({id:x.id,cap:x.cap}));}));return c;}
 function brFresh(){const b=brCur(false);return b&&brLast&&brLast.k===b.k&&brLast.upd===b.upd;}
 async function brShare(){
   const b=brCur(false);if(!brOk(b))return;
@@ -3564,6 +3615,7 @@ function dvReopen(){
   }else if(e.k==='br'){
     const b=e.b;if(!b||!b.k)return;
     if(PR.briefs[b.k]&&!confirm('Esiste già un briefing per questa data: sostituirlo con quello del PDF?'))return;
+    {const old=PR.briefs[b.k],im={};if(old)(old.sq||[]).forEach(q=>(q.lav||[]).forEach(l=>{if(l.img&&l.img.length)im[l.id]=l.img;}));(b.sq||[]).forEach(q=>(q.lav||[]).forEach(l=>{if(im[l.id])l.img=im[l.id];else delete l.img;}));}
     b.upd=new Date().toISOString();PR.briefs[b.k]=b;prSave();
     BRX.cant=b.cant;BRX.tipo=b.tipo;BRX.data=b.data;BRX.auto=false;
     pe('br-cantiere').value=b.cant;pe('br-data').value=b.data;brLbl();
