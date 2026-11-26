@@ -2491,7 +2491,7 @@ function prSanitize(s){
   ['records','imprese','rub','rfi'].forEach(k=>{o[k]=arr(s[k]).filter(ok);});
   o.delImp=arr(s.delImp).filter(x=>typeof x==='string'&&PR_IDOK.test(x));
   const c=s.cal||{};o.cal={it:arr(c.it).filter(ok),nt:(c.nt&&typeof c.nt==='object')?c.nt:{},ac:{}};
-  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;});
+  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;if(v.hid)o.cal.ac[k].hid=1;});
   o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
     ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(!l)return;if(!PR_IDOK.test(l.id||''))l.id=brUid();if(l.img){l.img=arr(l.img).filter(m=>m&&typeof m.d==='string'&&m.d.startsWith('data:image/jpeg;base64,')).slice(0,3).map(m=>({id:PR_IDOK.test(m.id||'')?m.id:brUid(),d:m.d,cap:String(m.cap||'').slice(0,120)}));if(!l.img.length)delete l.img;}});}});});
@@ -2610,6 +2610,7 @@ window.addEventListener('beforeunload',e=>{
 });
 
 // ── BRIEFING (giornaliero / settimanale) ──────────────────────────────────────
+const BR_GS=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 const BR_GG=['Tutta la settimana','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
 const BRX={cant:'',tipo:'g',data:''};
 let brLast=null, brOff=new Set();
@@ -2619,6 +2620,11 @@ const brPd=iso=>{const p=iso.split('-').map(Number);return new Date(p[0],p[1]-1,
 const brAdd=(iso,n)=>{const d=brPd(iso);d.setDate(d.getDate()+n);return brIso(d);};
 const brDow=iso=>(brPd(iso).getDay()+6)%7;
 const brMon=iso=>brAdd(iso,-brDow(iso));
+const brDiff=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+// periodo del briefing "settimanale": parte da un giorno qualsiasi e arriva fino a fine (max 14 giorni); senza fine: come prima (lun-sab) se parte di lunedì, altrimenti 7 giorni
+function brEnd(b){const mx=brAdd(b.data,13);if(b.fine&&b.fine>=b.data)return b.fine>mx?mx:b.fine;return brDow(b.data)===0?brAdd(b.data,5):brAdd(b.data,6);}
+function brPerTxt(b){const e=brEnd(b);return 'dal '+BR_GS[brDow(b.data)]+' '+prFmtD(b.data)+' al '+BR_GS[brDow(e)]+' '+prFmtD(e)+(b.ora?' (fino alle ore '+b.ora+')':'');}
+function brGgL(b,k){k=+k||0;if(!k)return 'Tutto il periodo';const d=brAdd(b.data,k-1);return BR_GS[brDow(d)]+' '+prFmtD(d);}
 const brDefDate=t=>t==='g'?brAdd(prToday(),1):brAdd(brMon(prToday()),7);
 const brLong=iso=>{const s=brPd(iso).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return s.charAt(0).toUpperCase()+s.slice(1);};
 const brKey=()=>prKey(BRX.cant)+'|'+BRX.tipo+'|'+BRX.data;
@@ -2628,6 +2634,12 @@ function brCur(create){
   return b;
 }
 const BR_IMG_MAX=3;
+function brPer(f,v){
+  const b=brCur(true);
+  if(f==='fine'){if(!v||v<b.data){toast('La data finale non può precedere l\'inizio');brRender();return;}b.fine=v>brAdd(b.data,13)?brAdd(b.data,13):v;}
+  else b.ora=v||'';
+  brTouch(b);brRender();
+}
 function brImgUi(sid,l){
   const im=l.img||[];
   return `<div class="br-imgs">`+im.map(x=>`<div class="br-th"><img src="${x.d}" alt="Immagine"><button class="br-x" onclick="brImgDel('${sid}','${l.id}','${x.id}')">Rimuovi</button><input class="br-in" placeholder="Didascalia (opz.)" value="${esc(x.cap||'')}" oninput="brImgCap('${sid}','${l.id}','${x.id}',this.value)"></div>`).join('')+
@@ -2673,7 +2685,7 @@ function brShow(){
   brDestRender();
 }
 function brLbl(){
-  pe('br-data-lbl').textContent=BRX.tipo==='g'?'Per il giorno':'Settimana dal';
+  pe('br-data-lbl').textContent=BRX.tipo==='g'?'Per il giorno':'Periodo dal';
   pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');pe('br-tm').classList.toggle('active',BRX.tipo==='m');
   calMode(BRX.tipo==='m');
 }
@@ -2683,7 +2695,6 @@ function brCtx(){
   if(BRX.tipo==='m'){calRender();return;}
   if(gv('br-data')&&gv('br-data')!==BRX.data)BRX.auto=false;
   let d=gv('br-data')||brDefDate(BRX.tipo);
-  if(BRX.tipo==='s'){d=brMon(d);pe('br-data').value=d;}
   BRX.data=d;brLbl();brRender();
 }
 function brEdit(a,id,f,v,lid){
@@ -2714,21 +2725,21 @@ function brReset(){
 function brMove(){
   const b=brCur(false);if(!b)return;
   let d=gv('br-mv');if(!d){toast('Scegli la nuova data');return;}
-  if(b.tipo==='s')d=brMon(d);
   if(d===b.data){toast('Data già questa');return;}
   const nk=prKey(b.cant)+'|'+b.tipo+'|'+d;
   if(PR.briefs[nk]&&!confirm('Esiste già un briefing per quella data: verrà sostituito da questo. Continuare?'))return;
   const now=new Date().toISOString();
   PR.briefs[b.k]={k:b.k,ck:b.ck,cant:b.cant,tipo:b.tipo,data:b.data,sq:[],att:[],mat:[],note:'',todo:'',upd:now};
+  if(b.fine)b.fine=brAdd(b.fine,brDiff(b.data,d));
   b.k=nk;b.data=d;b.upd=now;PR.briefs[nk]=b;prSave();
   BRX.data=d;BRX.auto=false;pe('br-data').value=d;brLbl();brRender();
-  toast('Briefing spostato al '+prFmtD(d)+(b.tipo==='s'?' (lunedì della settimana)':'')+': rigenera il PDF');
+  toast('Briefing spostato al '+prFmtD(d)+': rigenera il PDF');
 }
 function brSavedRender(){
   const L=Object.values(PR.briefs||{}).filter(b=>b&&b.k&&(b.tipo==='g'||b.tipo==='s')&&((b.sq||[]).some(q=>(q.lav||[]).some(l=>(l.testo||'').trim()))||(b.note||'').trim()||(b.todo||'').trim()||(b.att||[]).some(a=>(a.testo||'').trim())||(b.mat||[]).some(m=>(m.testo||'').trim())))
     .sort((a,b)=>(b.data+(b.upd||'')).localeCompare(a.data+(a.upd||''))).slice(0,60);
   const html=L.length?L.map(b=>{const t=b.upd?new Date(b.upd):null;const wk=b.tipo==='s';
-    return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(wk?'Sett. dal '+prFmtD(b.data):prFmtD(b.data))}</b> · ${esc(b.cant)}<div style="font-size:12px;color:var(--label2)">${wk?'Settimanale':'Giornaliero'}${t?' · modificato '+t.toLocaleDateString('it-IT')+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):''}</div></div><button class="br-x" style="color:var(--blue)" data-k="${esc(b.k)}" onclick="brOpenSaved(this.dataset.k)">Riapri</button></div>`;}).join('')
+    return `<div class="br-it" style="display:flex;gap:10px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(wk?'Periodo '+prFmtD(b.data)+' - '+prFmtD(brEnd(b)):prFmtD(b.data))}</b> · ${esc(b.cant)}<div style="font-size:12px;color:var(--label2)">${wk?'Settimanale':'Giornaliero'}${t?' · modificato '+t.toLocaleDateString('it-IT')+' '+t.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):''}</div></div><button class="br-x" style="color:var(--blue)" data-k="${esc(b.k)}" onclick="brOpenSaved(this.dataset.k)">Riapri</button></div>`;}).join('')
     :`<div class="br-it" style="color:var(--label2)">Nessun briefing salvato.</div>`;
   ['br-saved','rb-list'].forEach(id=>{const el=pe(id);if(el)el.innerHTML=html;});
 }
@@ -2747,8 +2758,10 @@ function brRender(){
   const I=(v,ph,call,extra)=>`<input class="br-in" ${extra||''} value="${esc(v)}" placeholder="${esc(ph)}" oninput="${call}">`;
   const T=(v,ph,call)=>`<textarea class="br-in" rows="2" placeholder="${esc(ph)}" oninput="${call}">${esc(v)}</textarea>`;
   const X=(txt,call)=>`<button class="br-x" onclick="${call}">${txt}</button>`;
-  const desc=wk?`Settimana dal ${prFmtD(BRX.data)} al ${prFmtD(brAdd(BRX.data,5))} (lun-sab)`:brLong(BRX.data||brDefDate('g'));
-  let h=`<div class="pr-alert info"><b>${wk?'Briefing settimanale':'Briefing giornaliero'}</b><br>${esc(desc)}</div>`;
+  const bb={data:BRX.data,fine:b.fine,ora:b.ora};
+  const desc=wk?'Periodo '+brPerTxt(bb):brLong(BRX.data||brDefDate('g'));
+  let h=`<div class="pr-alert info"><b>${wk?'Briefing a periodo (settimanale)':'Briefing giornaliero'}</b><br>${esc(desc)}</div>`;
+  if(wk)h+=`<div class="card" style="padding:10px 14px"><div class="br-g"><div><div class="row-sub" style="margin:0 0 4px">Fino al (max 14 giorni)</div><input class="br-in" type="date" value="${esc(brEnd(bb))}" min="${esc(BRX.data)}" max="${esc(brAdd(BRX.data,13))}" onchange="brPer('fine',this.value)"></div><div><div class="row-sub" style="margin:0 0 4px">Fino alle ore (opz.)</div><input class="br-in" type="time" value="${esc(b.ora||'')}" onchange="brPer('ora',this.value)"></div></div></div>`;
   if(brCur(false))h+=`<div class="card" style="padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;flex:1;min-width:140px">Data sbagliata? Sposta questo briefing a:</span><input class="form-inp" id="br-mv" type="date" value="${esc(BRX.data)}" style="flex:none;width:auto"><button class="btn btn-ghost btn-sm" onclick="brMove()">Sposta</button></div>`;
 
   h+=`<div class="sec-lbl">Note generali per tutte le squadre</div><div class="card" style="padding:10px 14px"><textarea class="br-in" rows="3" placeholder="Raccomandazioni valide per tutti (pulizia, DPI, viabilità, elementi finiti da non danneggiare, meteo...)" oninput="brEdit('note',null,null,this.value)">${esc(b.note||'')}</textarea></div>`;
@@ -2759,7 +2772,7 @@ function brRender(){
       <div style="margin-top:6px">${I(s.nome,'Squadra / impresa (es. Montaggio acciaio)',`brEdit('sq','${s.id}','nome',this.value)`,'list="dl-imprese"')}</div>
       <div style="margin-top:6px">${I(s.capo,'Caposquadra / referente',`brEdit('sq','${s.id}','capo',this.value)`)}</div></div>
     ${s.lav.map((l,i)=>`<div class="br-it"><div class="br-h"><span class="pr-tag">Lavorazione ${i+1}</span>${X('Rimuovi',`brDel('lav','${s.id}','${l.id}')`)}</div>
-      ${wk?`<select class="br-in" style="margin-top:6px" onchange="brEdit('sq','${s.id}','giorno',this.value,'${l.id}')">${BR_GG.map((g,k)=>`<option value="${k}"${String(l.giorno||'0')===String(k)?' selected':''}>${g}</option>`).join('')}</select>`:''}
+      ${wk?`<select class="br-in" style="margin-top:6px" onchange="brEdit('sq','${s.id}','giorno',this.value,'${l.id}')">${Array.from({length:brDiff(BRX.data,brEnd(bb))+2},(_,k)=>`<option value="${k}"${String(l.giorno||'0')===String(k)?' selected':''}>${esc(brGgL(bb,k))}</option>`).join('')}</select>`:''}
       <div style="margin-top:6px">${T(l.testo,'Cosa si fa (es. Montaggio telai asse C, piano 1)',`brEdit('sq','${s.id}','testo',this.value,'${l.id}')`)}</div>
       <div class="br-g">${I(l.luogo,'Dove (livello / zona, es. Piano 1 - Monte)',`brEdit('sq','${s.id}','luogo',this.value,'${l.id}')`)}${I(l.chi,'Chi (operatore / referente)',`brEdit('sq','${s.id}','chi',this.value,'${l.id}')`)}</div>
       <div style="margin-top:6px">${T(l.istr,'Istruzioni chiare: come, con quali mezzi, sicurezza, punti di attenzione',`brEdit('sq','${s.id}','istr',this.value,'${l.id}')`)}</div>
@@ -2821,7 +2834,7 @@ function brOk(b){
 function brText(b){
   const wk=b.tipo==='s',L=[];
   L.push((wk?'BRIEFING SETTIMANALE':'BRIEFING GIORNALIERO')+' - '+b.cant);
-  L.push(wk?`Settimana dal ${prFmtD(b.data)} al ${prFmtD(brAdd(b.data,5))}`:brLong(b.data));
+  L.push(wk?'Periodo '+brPerTxt(b):brLong(b.data));
   const comp=gv('p-compilatore');if(comp)L.push('Preparato da: '+comp);
   if((b.note||'').trim()){L.push('');L.push('NOTE GENERALI PER TUTTE LE SQUADRE');L.push(b.note.trim());}
   const td=(b.todo||'').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -2831,7 +2844,7 @@ function brText(b){
     const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
     L.push('');L.push('> '+(s.nome||'Squadra')+(s.capo?' (ref. '+s.capo+')':''));
     ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach((l,i)=>{
-      L.push(`${i+1}. ${wk&&+l.giorno?'['+BR_GG[+l.giorno]+'] ':''}${l.testo.trim()}${l.luogo?' - '+l.luogo:''}${l.chi?' ('+l.chi+')':''}`);
+      L.push(`${i+1}. ${wk&&+l.giorno?'['+brGgL(b,l.giorno)+'] ':''}${l.testo.trim()}${l.luogo?' - '+l.luogo:''}${l.chi?' ('+l.chi+')':''}`);
       if(l.istr.trim())L.push('   Istruzioni: '+l.istr.trim());
     });
   });
@@ -2845,7 +2858,7 @@ function brPdf(){
   const b=brCur(false);if(!brOk(b))return false;
   const wk=b.tipo==='s',now=new Date();
   const meta=[['Destinatari','Squadre e Direzione aziendale'],['Cantiere',b.cant],
-    ['Briefing',wk?`Settimanale - dal ${prFmtD(b.data)} al ${prFmtD(brAdd(b.data,5))} (lun-sab)`:'Giornaliero - '+brLong(b.data)]];
+    ['Briefing',wk?'Periodo '+brPerTxt(b):'Giornaliero - '+brLong(b.data)]];
   const comp=gv('p-compilatore');if(comp)meta.push(['Preparato da',comp]);
   meta.push(['Emesso il',now.toLocaleDateString('it-IT')+' '+now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})]);
   const sections=[];
@@ -2857,7 +2870,7 @@ function brPdf(){
   b.sq.forEach(s=>{
     const ls=s.lav.filter(l=>l.testo.trim());if(!ls.length)return;
     rows.push({group:(s.nome||'Squadra')+(s.capo?'  -  Referente: '+s.capo:'')});
-    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>{rows.push(wk?[String(++n),BR_GG[+l.giorno||0],l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']);
+    ls.slice().sort((x,y)=>(+x.giorno||0)-(+y.giorno||0)).forEach(l=>{rows.push(wk?[String(++n),brGgL(b,l.giorno),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']:[String(++n),l.testo.trim(),l.luogo||'—',l.chi||'—',l.istr.trim()||'—']);
       if((l.img||[]).length)figs.push({head:'Lavorazione '+n+' - '+l.testo.trim().slice(0,80),imgs:l.img.map(x=>({dataUrl:x.d,cap:x.cap||''}))});});
   });
   if(rows.length)lav.table=wk?{head:['N.','Giorno','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,22,36,26,22,64],rows}:{head:['N.','Lavorazione','Dove','Chi','Istruzioni operative'],widths:[8,44,30,26,70],rows};
@@ -2924,7 +2937,9 @@ function calMetaOf(k){return calData().ac[calCk()+'|'+k]||{op:'',h:''};}
 const calOrd=k=>{const o=calMetaOf(k).o;return o===undefined?1e9:o;};
 function calMetaSet(i,f,v){const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};m[f]=String(v).slice(0,20);m.u=Date.now();C.ac[kk]=m;prSave();}
 function calMine(){const ck=calCk(),C=calData();return C.it.filter(i=>i.ck===ck);}
-function calByDay(){const m={};calMine().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>a.u-b.u||(a.id<b.id?-1:1)));return m;}
+const calHid=k=>!!calMetaOf(k).hid;
+function calMineV(){return calMine().filter(i=>!calHid(calAk(i)));}
+function calByDay(){const m={};calMineV().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>a.u-b.u||(a.id<b.id?-1:1)));return m;}
 function calKill(ids){
   if(!ids.length)return;
   const C=calData(),s=new Set(ids);
@@ -2983,7 +2998,7 @@ function calTxtIn(){
 function calActs(){
   const m=new Map();
   const ym=CALX.y+'-'+String(CALX.m+1).padStart(2,'0');
-  calMine().forEach(i=>{const k=calAk(i),a=m.get(k)||{k,t:i.t,c:i.c,ids:[],mese:0,f0:i.d,fm:''};a.ids.push(i.id);
+  calMine().forEach(i=>{const k=calAk(i),a=m.get(k)||{k,t:i.t,c:i.c,ids:[],mese:0,f0:i.d,fm:'',days:[]};a.ids.push(i.id);a.days.push(i.d);
     if(i.d<a.f0)a.f0=i.d;
     if(i.d.slice(0,7)===ym){a.mese++;if(!a.fm||i.d<a.fm)a.fm=i.d;}m.set(k,a);});
   return [...m.values()].sort((a,b)=>calOrd(a.k)-calOrd(b.k)||(!a.fm)-(!b.fm)||(a.fm||a.f0).localeCompare(b.fm||b.f0)||a.t.localeCompare(b.t));
@@ -2994,12 +3009,23 @@ function calLeg(){
   pe('cal-dl').innerHTML=[...new Set(all.map(a=>a.t))].map(t=>`<option value="${esc(t)}">`).join('');
   if(!all.length){el.innerHTML='';return;}
   el.innerHTML=`<div class="sec-lbl">Attività (legenda)</div><div class="card">`+all.map((a,i)=>`<div class="br-it" style="display:flex;gap:10px;align-items:center">
-    <span class="cal-dot" style="background:${a.c}"></span>
-    <div style="flex:1;min-width:0"><b>${esc(a.t)}</b><div style="font-size:12px;color:var(--label2)">${a.fm?'dal '+prFmtD(a.fm)+' · ':''}${a.mese} gg in questo mese · ${a.ids.length} in totale</div>
+    <span class="cal-dot" style="background:${a.c};${calHid(a.k)?'opacity:.3':''}"></span>
+    <div style="flex:1;min-width:0;${calHid(a.k)?'opacity:.5':''}"><b>${esc(a.t)}</b>${calHid(a.k)?' <span style="font-size:12px;color:var(--label2)">(nascosta)</span>':''}<div style="font-size:14px;font-weight:600;color:var(--label);margin-top:2px">${(()=>{const d=calDaysTxt(a.days,CALX.y+'-'+String(CALX.m+1).padStart(2,'0'));return (d.txt?esc(d.txt):'<span style="font-weight:400;color:var(--label2)">nessun giorno in questo mese</span>')+(d.rest?` <span style="font-weight:400;font-size:12px;color:var(--label2)">(+${d.rest} in altri mesi)</span>`:'');})()}</div><div style="font-size:12px;color:var(--label2)">${a.mese} gg in questo mese · ${a.ids.length} in totale</div>
       <div style="display:flex;gap:8px;margin-top:6px"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Operatori" value="${esc(calMetaOf(a.k).op)}" oninput="calMetaSet(${i},'op',this.value)"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Ore" value="${esc(calMetaOf(a.k).h)}" oninput="calMetaSet(${i},'h',this.value)"></div></div>
     <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${calHid(a.k)?'Mostra':'Nascondi'}</button>
     <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
-    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere.</div>`)+`</div>`;
+    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere.</div>`)+`</div>`;
+}
+function calDaysTxt(days,ym){
+  const inM=days.filter(d=>d.slice(0,7)===ym).sort(),out=[],f=d=>BR_GS[brDow(d)]+' '+(+d.slice(8));let s=null,p=null;
+  const push=()=>{if(s)out.push(s===p?f(s):f(s)+' – '+f(p));};
+  inM.forEach(d=>{if(s&&brAdd(p,1)===d){p=d;return;}push();s=d;p=d;});push();
+  return{txt:out.join(', '),rest:days.length-inM.length};
+}
+function calHidTog(i){
+  const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};
+  if(m.hid)delete m.hid;else m.hid=1;m.u=Date.now();C.ac[kk]=m;prSave();calRender();
 }
 function calMoveAct(i,d){
   const A=CALX.acts,j=i+d;if(!A[i]||!A[j])return;
@@ -3165,7 +3191,7 @@ function calText(){
 function calOk(){
   if(!BRX.cant){toast('Inserisci il cantiere');return false;}
   const [a,b]=calRange();
-  if(!calMine().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
+  if(!calMineV().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
   return true;
 }
 function calPdfMese(){
@@ -3182,11 +3208,11 @@ function calPdfMese(){
   doc.setFontSize(9);doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,21.5,{align:'right'});
   // legenda (attività con almeno un giorno nel mese)
   const leg=new Map();
-  calMine().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=leg.get(k)||{k,t:i.t,c:i.c,n:0,f:i.d};e.n++;if(i.d<e.f)e.f=i.d;leg.set(k,e);});
+  calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=leg.get(k)||{k,t:i.t,c:i.c,n:0,f:i.d,days:[]};e.n++;e.days.push(i.d);if(i.d<e.f)e.f=i.d;leg.set(k,e);});
   const L=[...leg.values()].sort((x,y)=>calOrd(x.k)-calOrd(y.k)||x.f.localeCompare(y.f)||x.t.localeCompare(y.t));
   L.forEach(e=>{const m=calMetaOf(e.k);e.op=(m.op||'').trim();e.h=(m.h||'').trim();});
   const hasMeta=L.some(e=>e.op||e.h);
-  const LC=hasMeta?2:3,LW=(PW-2*MX)/LC,legMax=Math.min(L.length,12),legH=legMax?Math.ceil(legMax/LC)*5.2+4:0;
+  const LC=1,LW=PW-2*MX,legMax=Math.min(L.length,10),legH=legMax?legMax*4.9+9:0;
   const top=26,hh=6,bottom=PH-16-legH;
   const first=brMon(brIso(new Date(CALX.y,CALX.m,1)));
   const rows=Math.ceil((brDow(a)+ (+b.slice(8)))/7);
@@ -3216,14 +3242,22 @@ function calPdfMese(){
     if(its.length>show.length){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,100,105);doc.text('+'+(its.length-show.length)+' altre',x+2,y+6+show.length*(ch+.6)+3);}
     if(((C.nt[ck+'|'+d]||{}).t||'').trim()){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(120,120,125);doc.text('nota',x+cw-1.5,y+4,{align:'right'});}
   }
-  // legenda
-  L.slice(0,legMax).forEach((e,i)=>{
-    const x=MX+(i%LC)*LW,y=bottom+6+Math.floor(i/LC)*5.2;
-    doc.setFillColor(...hex(e.c));doc.roundedRect(x,y-3,4,3.6,.6,.6,'F');
-    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,40,45);
-    const extraT=(e.op?'  -  '+e.op+' op.':'')+(e.h?'  -  '+e.h+' h':'');
-    doc.text(fit(e.t,LW-18-(extraT?doc.getTextWidth(pdfSafe(extraT)):0))+'  ('+e.n+' gg)'+pdfSafe(extraT),x+6,y);
-  });
+  // legenda a tabella: attività | giorni | operatori | ore
+  if(legMax){
+    const ym=CALX.y+'-'+String(CALX.m+1).padStart(2,'0'),y0=bottom+4.5;
+    const cA=MX+6,cG=MX+80,cO=PW-MX-34,cH=PW-MX-14;
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(110,110,115);
+    doc.text('ATTIVITA',cA,y0);doc.text('GIORNI',cG,y0);if(hasMeta){doc.text('OPERATORI',cO,y0);doc.text('ORE',cH,y0);}
+    L.slice(0,legMax).forEach((e,i)=>{
+      const y=y0+4.6+i*4.9;
+      doc.setFillColor(...hex(e.c));doc.roundedRect(MX,y-3,4,3.6,.6,.6,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,45);
+      doc.text(fit(e.t,cG-cA-3),cA,y);
+      doc.setFont('helvetica','normal');
+      doc.text(fit(calDaysTxt(e.days,ym).txt,(hasMeta?cO:PW-MX)-cG-3),cG,y);
+      if(hasMeta){doc.text(fit(e.op||'-',cH-cO-2),cO,y);doc.text(fit(e.h||'-',PW-MX-cH),cH,y);}
+    });
+  }
   // pagina 2: attività oltre la legenda + note
   const notes=[];
   for(let d=a;d<=b;d=brAdd(d,1)){const t=((C.nt[ck+'|'+d]||{}).t||'').trim();if(t)notes.push([d,t]);}
@@ -3232,7 +3266,7 @@ function calPdfMese(){
     doc.addPage('a4','landscape');let y=18;
     doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text('Calendario lavori - '+CAL_MESI[CALX.m]+' '+CALX.y+' (segue)',MX,y);y+=8;
     const gg=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],lines=[];
-    if(extra.length){lines.push({h:'Altre attività'});extra.forEach(e=>lines.push({c:e.c,t:e.t+'  ('+e.n+' gg)'+(e.op?'  -  '+e.op+' op.':'')+(e.h?'  -  '+e.h+' h':'')}));}
+    if(extra.length){lines.push({h:'Altre attività'});extra.forEach(e=>lines.push({c:e.c,t:e.t+'  ('+e.n+' gg: '+calDaysTxt(e.days,CALX.y+'-'+String(CALX.m+1).padStart(2,'0')).txt+')'+(e.op?'  -  '+e.op+' op.':'')+(e.h?'  -  '+e.h+' h':'')}));}
     if(notes.length){lines.push({h:'Note dei giorni'});notes.forEach(([d,t])=>lines.push({t:gg[brDow(d)]+' '+prFmtD(d)+': '+t}));}
     lines.forEach(l=>{
       if(l.h){y+=3;if(y>PH-20){doc.addPage('a4','landscape');y=18;}doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(60,60,65);doc.text(l.h,MX,y);y+=6;return;}
@@ -3253,7 +3287,7 @@ function calPdfMese(){
   uploadPdfToDrive(blob,fn);
   return true;
 }
-function calSig(){const [a,b]=calRange();return CALX.vista+'|'+BRX.cant+'|'+a+'|'+b+'|'+JSON.stringify(calMine().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calMat(a,b))+calText();}
+function calSig(){const [a,b]=calRange();return CALX.vista+'|'+BRX.cant+'|'+a+'|'+b+'|'+JSON.stringify(calMineV().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calData().ac)+JSON.stringify(calMat(a,b))+calText();}
 function calFresh(){return calLast&&calLast.sig===calSig();}
 async function calShare(){
   if(!calOk())return;if(!calFresh()&&!calPdf())return;
@@ -3292,7 +3326,7 @@ function calVistaUI(){
 }
 function calGanttRows(a,b){
   const m=new Map();
-  calMine().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
+  calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
   return [...m.values()].map(e=>{e.days.sort();e.runs=[];let s=e.days[0],p=s;
     for(let n=1;n<=e.days.length;n++){const d=e.days[n];if(d&&d===brAdd(p,1)){p=d;continue;}e.runs.push([s,p]);s=d;p=d;}
     return e;}).sort((x,y)=>x.days[0]<y.days[0]?-1:x.days[0]>y.days[0]?1:x.t.localeCompare(y.t));
