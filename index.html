@@ -241,8 +241,13 @@ textarea.br-in{resize:vertical;min-height:44px}
 .cal-c.out{opacity:.5}.cal-c.sel{border-color:var(--blue);background:var(--blue-bg)}.cal-c.today{box-shadow:inset 0 0 0 1.5px var(--orange)}
 .cal-n{font-size:12px;font-weight:600;padding:0 3px;color:var(--label)}.cal-n.sun{color:var(--red)}.cal-nt{font-size:7px;color:var(--orange);margin-left:2px;vertical-align:middle}
 .cal-chip{font-size:9px;line-height:1.2;padding:1px 3px;border-radius:3px;margin-top:2px;font-weight:600;overflow:hidden;overflow-wrap:break-word;word-break:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4}
-#pane-briefing.cal-on{max-width:min(1600px,97vw)}
-#pane-briefing.cal-on>.card,#pane-briefing.cal-on>.sec-lbl,#cal-wrap>:not(#cal-main){max-width:840px}
+#pane-calendario{max-width:min(1200px,97vw)}
+#pane-calendario>.card,#pane-calendario>.sec-lbl,#cal-wrap>:not(#cal-main){max-width:900px}
+.cp-day{display:flex;gap:12px;padding:10px 10px;border-top:1px solid var(--sep2)}.cp-day:first-child{border-top:none}.cp-day.today{background:var(--blue-bg);border-radius:10px}
+.cp-d{width:62px;flex:none;text-align:center;padding-top:2px}.cp-d b{display:block;font-size:24px;line-height:1.05;font-weight:800;letter-spacing:-.5px;color:var(--label)}.cp-d span{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--label2)}
+.cp-its{flex:1;min-width:0}.cp-it+.cp-it{margin-top:10px}.cp-t{display:flex;gap:8px;align-items:center}.cp-t b{flex:1;min-width:0;font-size:15px}
+.cp-f{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}.cp-f .br-in{flex:1 1 76px;min-width:0;width:auto}.cp-f .cp-n{flex:3 1 160px}
+.cp-nt{font-size:13px;color:var(--label2);margin-top:8px;font-style:italic}
 @media(min-width:900px){
   .cal-g{gap:4px}.cal-h{font-size:13px;padding:6px 0}
   .cal-c{min-height:132px;padding:5px;border-radius:9px}
@@ -315,6 +320,10 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div class="tab" data-p="briefing" onclick="showPane('briefing')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <div class="tab-lbl">Briefing</div>
+  </div>
+  <div class="tab" data-p="calendario" onclick="showPane('calendario')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h2M12 14h2M16 14h.01M8 18h2M12 18h2"/></svg>
+    <div class="tab-lbl">Calendario</div>
   </div>
   <div class="tab" data-p="settimanale" onclick="showPane(CTRL_LAST)">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>
@@ -444,7 +453,7 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div class="sec-lbl">Briefing per le squadre</div>
   <div class="card">
     <div class="form-row"><div class="form-lbl">Cantiere</div><input class="form-inp" id="br-cantiere" list="dl-cantieri" placeholder="Nome / indirizzo" autocomplete="off" onchange="brCtx()"></div>
-    <div class="form-row"><div class="form-lbl">Tipo</div><div class="rep-sel" style="margin:0;margin-left:auto"><button class="rep-btn active" id="br-tg" style="padding:7px 10px;font-size:13px" onclick="brTipo('g')">Giornaliero</button><button class="rep-btn" id="br-ts" style="padding:7px 10px;font-size:13px" onclick="brTipo('s')">Settimanale</button><button class="rep-btn" id="br-tm" style="padding:7px 10px;font-size:13px" onclick="brTipo('m')">Calendario</button></div></div>
+    <div class="form-row"><div class="form-lbl">Tipo</div><div class="rep-sel" style="margin:0;margin-left:auto"><button class="rep-btn active" id="br-tg" style="padding:7px 10px;font-size:13px" onclick="brTipo('g')">Giornaliero</button><button class="rep-btn" id="br-ts" style="padding:7px 10px;font-size:13px" onclick="brTipo('s')">Settimanale</button></div></div>
     <div class="form-row" id="br-data-row"><div class="form-lbl" id="br-data-lbl">Per il giorno</div><input class="form-inp" id="br-data" type="date" onchange="brCtx()"></div>
   </div>
   <div id="br-body"></div>
@@ -452,49 +461,6 @@ textarea.br-in{resize:vertical;min-height:44px}
   <div id="br-saved-wrap">
   <div class="sec-lbl">Briefing salvati - riapri</div>
   <div class="card" id="br-saved"></div>
-  </div>
-  <div id="cal-wrap" style="display:none">
-    <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere qui sopra: ogni cantiere ha il suo calendario.</div>
-    <div class="card" id="cal-main" style="padding:10px 8px">
-      <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;flex-wrap:wrap">
-        <div class="rep-sel" style="margin:0"><button class="rep-btn active" id="cal-vm" style="padding:6px 12px;font-size:13px" onclick="calVista('m')">Mese</button><button class="rep-btn" id="cal-vg" style="padding:6px 12px;font-size:13px" onclick="calVista('g')">Gantt</button></div>
-        <select id="cal-span" class="form-inp" style="display:none;flex:none;width:auto;font-size:13px" onchange="calSpan(this.value)"><option value="1">1 mese</option><option value="2">2 mesi</option><option value="3">3 mesi</option></select>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px">
-        <button class="rep-btn" onclick="calNav(-1)" aria-label="Mese precedente">‹</button>
-        <div id="cal-title" style="flex:1;text-align:center;font-weight:700;font-size:17px"></div>
-        <button class="rep-btn" onclick="calToday()">Oggi</button>
-        <button class="rep-btn" onclick="calNav(1)" aria-label="Mese successivo">›</button>
-      </div>
-      <div class="cal-g" id="cal-grid"></div>
-      <div id="cal-gantt" style="display:none;overflow-x:auto"></div>
-    </div>
-    <div id="cal-sel" style="margin-top:12px"></div>
-    <div id="cal-ed"><div class="sec-lbl">Attività e colore</div>
-    <div class="card" style="padding:12px 14px">
-      <div id="cal-editbar" style="display:none;gap:8px;align-items:center;margin-bottom:10px"></div>
-      <input class="br-in" id="cal-txt" list="cal-dl" autocomplete="off" placeholder="Es. Montaggio lamiere solaio" oninput="calTxtIn()">
-      <datalist id="cal-dl"></datalist>
-      <div class="cal-pal" id="cal-pal"></div>
-      <button class="btn btn-blue" id="cal-apply" style="width:100%;margin-top:12px" onclick="calApply()">Applica ai giorni selezionati</button>
-    </div></div>
-    <div id="cal-leg"></div>
-    <div id="cal-list"><div class="sec-lbl">Elenco attività per il caposquadra</div><div class="card" style="padding:12px 14px">
-      <div class="row-sub" style="margin:0 0 8px">Una pagina con le attività (nell'ordine della legenda, senza quelle nascoste), i giorni, operatori, ore e note.</div>
-      <div class="br-g"><div><div class="row-sub" style="margin:0 0 4px">Dal</div><input class="br-in" type="date" id="cl-a" onchange="calListSet()"></div><div><div class="row-sub" style="margin:0 0 4px">Al</div><input class="br-in" type="date" id="cl-b" onchange="calListSet()"></div></div>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px"><input type="checkbox" id="cl-p" checked onchange="calListSet()" style="width:18px;height:18px"> Escludi i giorni già passati (prima di oggi)</label>
-      <div class="btn-row" style="margin-top:10px"><button class="btn btn-blue" onclick="calListPdf()">PDF elenco</button><button class="btn btn-green" onclick="calListShare()">Condividi</button><button class="btn btn-ghost" onclick="calListWa()">WhatsApp</button></div>
-    </div><div id="cl-out" class="rep-out" style="display:none;margin-top:12px"></div></div>
-    <div id="cal-mat"></div>
-    <div class="btn-row">
-      <button class="btn btn-blue" onclick="calPdf()">Genera PDF</button>
-      <button class="btn btn-green" onclick="calShare()">Condividi</button>
-      <button class="btn btn-ghost" onclick="calMail()">Email</button>
-      <button class="btn btn-ghost" onclick="calWa()">WhatsApp</button>
-      <button class="btn btn-ghost" id="cal-resetbtn" onclick="calReset()">Svuota mese</button>
-    </div>
-    <div id="cal-out" class="rep-out" style="display:none;margin-top:12px"></div>
-    <div class="pr-alert info" style="margin-top:12px">Il calendario si salva da solo (anche nel backup su Drive). Per correggere basta riselezionare i giorni, usare Togli, Modifica o Elimina: non serve ricominciare. Il PDF mese è orizzontale e viene salvato anche su Drive.</div>
   </div>
   <div class="btn-row" id="br-btns">
     <button class="btn btn-blue" onclick="brPdf()">Genera PDF</button>
@@ -505,6 +471,58 @@ textarea.br-in{resize:vertical;min-height:44px}
   </div>
   <div id="br-out" class="rep-out" style="display:none;margin-top:12px"></div>
   <div class="pr-alert info" id="br-info" style="margin-top:12px">Email e WhatsApp inviano il testo del briefing; il PDF va allegato (Condividi lo allega da solo dove il dispositivo lo consente). Ogni PDF viene salvato anche su Drive.</div>
+</div>
+
+<div class="pane" id="pane-calendario">
+  <div class="sec-lbl">Calendario lavori</div>
+  <div class="card">
+    <div class="form-row"><div class="form-lbl">Cantiere</div><input class="form-inp" id="cal-cant" list="dl-cantieri" placeholder="Nome / indirizzo" autocomplete="off" onchange="calCtx()"></div>
+    <div class="form-row"><div class="form-lbl">Dal</div><input class="form-inp" id="cal-a" type="date" onchange="calPerSet()"></div>
+    <div class="form-row"><div class="form-lbl">Al</div><input class="form-inp" id="cal-b" type="date" onchange="calPerSet()"></div>
+  </div>
+  <div id="cal-wrap">
+    <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere: ogni cantiere ha il suo calendario.</div>
+    <div class="card" id="cal-main" style="padding:10px 8px">
+      <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;flex-wrap:wrap">
+        <button class="rep-btn" onclick="calPerShift(-1)" aria-label="Periodo precedente">‹</button>
+        <div id="cal-title" style="flex:1;text-align:center;font-weight:700;font-size:16px"></div>
+        <button class="rep-btn" onclick="calPerToday()">Oggi</button>
+        <button class="rep-btn" onclick="calPerShift(1)" aria-label="Periodo successivo">›</button>
+      </div>
+      <div style="padding:0 4px 8px"><div class="rep-sel" style="margin:0"><button class="rep-btn active" id="cal-vm" style="padding:6px 12px;font-size:13px" onclick="calVista('m')">Calendario</button><button class="rep-btn" id="cal-vg" style="padding:6px 12px;font-size:13px" onclick="calVista('g')">Gantt</button></div></div>
+      <div class="cal-g" id="cal-grid"></div>
+      <div id="cal-gantt" style="display:none;overflow-x:auto"></div>
+    </div>
+    <div id="cal-sel" style="margin-top:12px"></div>
+    <div id="cal-ed"><div class="sec-lbl">Attività, operatori e ore</div>
+    <div class="card" style="padding:12px 14px">
+      <div id="cal-editbar" style="display:none;gap:8px;align-items:center;margin-bottom:10px"></div>
+      <input class="br-in" id="cal-txt" list="cal-dl" autocomplete="off" placeholder="Es. Montaggio lamiere solaio" oninput="calTxtIn()">
+      <datalist id="cal-dl"></datalist>
+      <div style="display:flex;gap:8px;margin-top:8px"><input class="br-in" id="cal-op" style="flex:1;min-width:0" inputmode="decimal" placeholder="Operatori" aria-label="Numero operatori"><input class="br-in" id="cal-ho" style="flex:1;min-width:0" inputmode="decimal" placeholder="Ore a disposizione" aria-label="Ore a disposizione"></div>
+      <input class="br-in" id="cal-no" style="margin-top:8px" placeholder="Note per il caposquadra (opz.)">
+      <div class="cal-pal" id="cal-pal"></div>
+      <button class="btn btn-blue" id="cal-apply" style="width:100%;margin-top:12px" onclick="calApply()">Applica ai giorni selezionati</button>
+    </div></div>
+    <div id="cal-prog"></div>
+    <div id="cal-leg" style="margin-top:12px"></div>
+    <div id="cal-mat"></div>
+    <div class="sec-lbl">PDF</div>
+    <div class="card" style="padding:12px 14px">
+      <div class="form-row"><div class="form-lbl">Contenuto</div><select class="form-inp" id="cal-pm" style="max-width:260px"><option value="l">Solo elenco attività</option><option value="c">Solo calendario</option><option value="g">Solo Gantt</option><option value="cl" selected>Calendario + elenco sotto</option><option value="gl">Gantt + elenco sotto</option></select></div>
+      <div class="form-row"><div class="form-lbl">Pagina</div><select class="form-inp" id="cal-po" style="max-width:260px"><option value="p">Verticale</option><option value="l">Orizzontale</option></select></div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px"><input type="checkbox" id="cal-pmat" checked style="width:18px;height:18px"> Aggiungi materiali e attrezzature dai briefing</label>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-blue" onclick="calPdf()">Genera PDF</button>
+        <button class="btn btn-green" onclick="calShare()">Condividi</button>
+        <button class="btn btn-ghost" onclick="calMail()">Email</button>
+        <button class="btn btn-ghost" onclick="calWa()">WhatsApp</button>
+        <button class="btn btn-ghost" id="cal-resetbtn" onclick="calReset()">Svuota periodo</button>
+      </div>
+    </div>
+    <div id="cal-out" class="rep-out" style="display:none;margin-top:12px"></div>
+    <div class="pr-alert info" style="margin-top:12px">Il calendario si salva da solo (anche nel backup su Drive). Per correggere basta riselezionare i giorni, usare ✕, Modifica o Elimina. Le attività nascoste non compaiono né nel programma né nei PDF.</div>
+  </div>
 </div>
 
 <div class="pane" id="pane-settimanale">
@@ -1132,6 +1150,7 @@ function showPane(name){
   if(name==='rfi'&&typeof rfiShow==='function')rfiShow();
   if(name==='presenze'&&typeof prRender==='function')prRender();
   if(name==='briefing'&&typeof brShow==='function')brShow();
+  if(name==='calendario'&&typeof calShow==='function')calShow();
   if(name==='giornaliera'&&typeof chkAuto==='function')chkAuto();
   if(name==='storico'&&typeof rdRender==='function'){rdRender();brSavedRender();dvLoad();}
   document.querySelector('.tab[data-p="'+tp+'"]')?.classList.add('active');
@@ -2496,7 +2515,7 @@ function prSanitize(s){
   const o=Object.assign({},s);
   ['records','imprese','rub','rfi'].forEach(k=>{o[k]=arr(s[k]).filter(ok);});
   o.delImp=arr(s.delImp).filter(x=>typeof x==='string'&&PR_IDOK.test(x));
-  const c=s.cal||{};o.cal={it:arr(c.it).filter(ok),nt:(c.nt&&typeof c.nt==='object')?c.nt:{},ac:{}};
+  const c=s.cal||{};o.cal={it:arr(c.it).filter(ok).map(i=>{['op','h'].forEach(f=>{if(i[f]!==undefined)i[f]=String(i[f]).slice(0,20);});if(i.n!==undefined)i.n=String(i.n).slice(0,160);return i;}),nt:(c.nt&&typeof c.nt==='object')?c.nt:{},ac:{}};
   if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;if(v.hid)o.cal.ac[k].hid=1;if(v.n)o.cal.ac[k].n=String(v.n).slice(0,160);});
   o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
@@ -2544,7 +2563,7 @@ function prMerge(s){
   (sc.it||[]).forEach(i=>{if(!i||!i.id||tomb.has(i.id))return;const m=ci.get(i.id);if(!m){PR.cal.it.push(i);ci.set(i.id,i);n++;}else if((i.u||0)>(m.u||0)){Object.assign(m,i);n++;}});
   PR.cal.it=PR.cal.it.filter(i=>!tomb.has(i.id));
   Object.keys(sc.nt||{}).forEach(k=>{const a=sc.nt[k],m=PR.cal.nt[k];if(a&&(!m||(a.u||0)>(m.u||0))){PR.cal.nt[k]=a;n++;}});
-  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();rdRender();if(typeof rfiRender==='function')rfiRender();}}
+  if(n){prSaveLocal();if(typeof brRender==='function'){brRender();brDestRender();rdRender();if(typeof rfiRender==='function')rfiRender();if(typeof calRender==='function'&&pe('pane-calendario')&&pe('pane-calendario').classList.contains('active'))calRender();}}
   return n;
 }
 async function prDriveSync(){
@@ -2685,20 +2704,18 @@ function brInit(){
   brLbl();brRender();brDestRender();
 }
 function brShow(){
-  if(BRX.auto&&BRX.tipo!=='m'){const nd=brDefDate(BRX.tipo);if(nd!==BRX.data){BRX.data=nd;pe('br-data').value=nd;brLbl();}}
+  if(BRX.auto){const nd=brDefDate(BRX.tipo);if(nd!==BRX.data){BRX.data=nd;pe('br-data').value=nd;brLbl();}}
   if(!gv('br-cantiere')&&gv('g-cantiere')){pe('br-cantiere').value=gv('g-cantiere');brCtx();}
   else{brRender();}
   brDestRender();
 }
 function brLbl(){
   pe('br-data-lbl').textContent=BRX.tipo==='g'?'Per il giorno':'Periodo dal';
-  pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');pe('br-tm').classList.toggle('active',BRX.tipo==='m');
-  calMode(BRX.tipo==='m');
+  pe('br-tg').classList.toggle('active',BRX.tipo==='g');pe('br-ts').classList.toggle('active',BRX.tipo==='s');
 }
-function brTipo(t){BRX.tipo=t;if(t!=='m'){BRX.data=brDefDate(t);BRX.auto=true;pe('br-data').value=BRX.data;}brLbl();brRender();}
+function brTipo(t){BRX.tipo=t;BRX.data=brDefDate(t);BRX.auto=true;pe('br-data').value=BRX.data;brLbl();brRender();}
 function brCtx(){
   BRX.cant=gv('br-cantiere');
-  if(BRX.tipo==='m'){calRender();return;}
   if(gv('br-data')&&gv('br-data')!==BRX.data)BRX.auto=false;
   let d=gv('br-data')||brDefDate(BRX.tipo);
   BRX.data=d;brLbl();brRender();
@@ -2759,7 +2776,6 @@ function brOpenSaved(k){
 function brRender(){
   brSavedRender();
   const el=pe('br-body');if(!el)return;
-  if(BRX.tipo==='m'){calRender();return;}
   const b=brCur(false)||{sq:[],att:[],mat:[],note:''},wk=BRX.tipo==='s';
   const I=(v,ph,call,extra)=>`<input class="br-in" ${extra||''} value="${esc(v)}" placeholder="${esc(ph)}" oninput="${call}">`;
   const T=(v,ph,call)=>`<textarea class="br-in" rows="2" placeholder="${esc(ph)}" oninput="${call}">${esc(v)}</textarea>`;
@@ -2929,11 +2945,11 @@ function brWa(){
   window.open('https://wa.me/?text='+encodeURIComponent(brText(b)),'_blank','noopener,noreferrer');
 }
 
-// ── CALENDARIO DEL MESE (Briefing > Calendario) ───────────────────────────────
-// PR.cal = { it:[{id,ck,d,t,c,u}], nt:{'ck|YYYY-MM-DD':{t,u}} }  (un'attività per giorno; i giorni sono voci separate)
+// ── CALENDARIO (tab Calendario: periodo, programma per giorno, PDF) ───────────────────────────────
+// PR.cal = { it:[{id,ck,d,t,c,u,s?,op?,h?,n?}], nt:{'ck|YYYY-MM-DD':{t,u}} }  (un'attività per giorno; i giorni sono voci separate)
 const CAL_COL=['#E53935','#1E88E5','#43A047','#FB8C00','#8E24AA','#00ACC1','#FDD835','#6D4C41','#EC407A','#757575'];
 const CAL_MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-const CALX={y:0,m:0,sel:new Set(),color:CAL_COL[0],edit:null,anchor:null,acts:[]};
+const CALX={y:0,m:0,sel:new Set(),color:CAL_COL[0],edit:null,anchor:null,acts:[],pa:'',pb:'',vista:'m'};
 let calDrag=null, calLast=null;
 const calCk=()=>prKey(BRX.cant);
 const calFg=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return (r*.299+g*.587+b*.114)>150?'#1c1c1e':'#ffffff';};
@@ -2945,52 +2961,318 @@ function calMetaSet(i,f,v){const a=CALX.acts[i];if(!a)return;const C=calData(),k
 function calMine(){const ck=calCk(),C=calData();return C.it.filter(i=>i.ck===ck);}
 const calHid=k=>!!calMetaOf(k).hid;
 function calMineV(){return calMine().filter(i=>!calHid(calAk(i)));}
-function calByDay(){const m={};calMineV().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>a.u-b.u||(a.id<b.id?-1:1)));return m;}
+function calByDay(){const m={};calMineV().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>(a.s||a.u)-(b.s||b.u)||(a.id<b.id?-1:1)));return m;}
 function calKill(ids){
   if(!ids.length)return;
   const C=calData(),s=new Set(ids);
   C.it=C.it.filter(i=>!s.has(i.id));
   PR.delImp=[...new Set([...(PR.delImp||[]),...ids])];
 }
-function calMode(on){
-  const sh=(id,v)=>{const e=pe(id);if(e)e.style.display=v?'':'none';};
-  sh('cal-wrap',on);
-  ['br-data-row','br-body','br-dest','br-btns','br-info'].forEach(id=>sh(id,!on));
-  if(on){const o=pe('br-out');if(o)o.style.display='none';}
-  const pn=pe('pane-briefing');if(pn)pn.classList.toggle('cal-on',on);
-  // elenco "Briefing salvati": in fondo alla pagina nella vista calendario, sopra il calendario altrimenti
-  const w=pe('br-saved-wrap'),cw=pe('cal-wrap');
-  if(w&&pn&&cw){if(on)pn.appendChild(w);else if(w.nextElementSibling!==cw)pn.insertBefore(w,cw);}
+// ── nuove / riscritte ──
+const calPer=()=>[CALX.pa,CALX.pb];
+function calPerInit(){
+  if(CALX.pa)return;
+  try{const s=JSON.parse(localStorage.getItem('smCalPer')||'null');if(s&&/^\d{4}-\d\d-\d\d$/.test(s.a)&&/^\d{4}-\d\d-\d\d$/.test(s.b)&&s.b>=s.a){CALX.pa=s.a;CALX.pb=s.b;}}catch(e){}
+  if(!CALX.pa){const t=prToday();CALX.pa=t;CALX.pb=brAdd(t,6);}
 }
-const calWide=()=>window.innerWidth>=900;
-let calRz=null;window.addEventListener('resize',()=>{clearTimeout(calRz);calRz=setTimeout(()=>{if(BRX.tipo==='m'&&pe('cal-wrap')&&pe('cal-wrap').style.display!=='none'){calGrid();calGantt();}},150);});
-function calInitView(){if(!CALX.y){const d=new Date();CALX.y=d.getFullYear();CALX.m=d.getMonth();}}
-function calNav(n){calInitView();const d=new Date(CALX.y,CALX.m+n,1);CALX.y=d.getFullYear();CALX.m=d.getMonth();calRender();}
-function calToday(){const d=new Date();CALX.y=d.getFullYear();CALX.m=d.getMonth();calRender();}
+function calPerSave(){try{localStorage.setItem('smCalPer',JSON.stringify({a:CALX.pa,b:CALX.pb}));}catch(e){}}
+function calPerUI(){const A=pe('cal-a'),B=pe('cal-b');if(A&&document.activeElement!==A)A.value=CALX.pa;if(B&&document.activeElement!==B)B.value=CALX.pb;}
+function calPerSet(){
+  let a=gv('cal-a')||CALX.pa,b=gv('cal-b')||CALX.pb;
+  if(b<a){if(document.activeElement&&document.activeElement.id==='cal-a')b=a;else a=b;}
+  if(calDiff(a,b)>179){b=brAdd(a,179);toast('Periodo limitato a 180 giorni');}
+  CALX.pa=a;CALX.pb=b;calPerSave();CALX.sel.clear();CALX.anchor=null;calPerUI();calRender();
+}
+function calPerShift(n){const len=calDiff(CALX.pa,CALX.pb)+1,k=n*len;CALX.pa=brAdd(CALX.pa,k);CALX.pb=brAdd(CALX.pb,k);calPerSave();CALX.sel.clear();CALX.anchor=null;calPerUI();calRender();}
+function calPerToday(){const len=calDiff(CALX.pa,CALX.pb),t=prToday();CALX.pa=t;CALX.pb=brAdd(t,len);calPerSave();CALX.sel.clear();CALX.anchor=null;calPerUI();calRender();}
+const calInP=d=>d>=CALX.pa&&d<=CALX.pb;
+function calShow(){
+  calPerInit();
+  const c=gv('br-cantiere')||gv('g-cantiere')||BRX.cant||'';
+  BRX.cant=c;if(pe('cal-cant'))pe('cal-cant').value=c;
+  if(!gv('br-cantiere')&&c)pe('br-cantiere').value=c;
+  calPerUI();calRender();
+}
+function calCtx(){const c=gv('cal-cant');BRX.cant=c;pe('br-cantiere').value=c;CALX.sel.clear();CALX.anchor=null;calRender();}
 function calRender(){
   if(!pe('cal-grid'))return;
-  calInitView();calBind();
+  calPerInit();calBind();
   const has=!!BRX.cant;
   pe('cal-msg').style.display=has?'none':'block';
-  pe('cal-title').textContent=CAL_MESI[CALX.m]+' '+CALX.y;
-  calGrid();calGantt();calPal();calLeg();calSelUI();calEditBar();calVistaUI();calMatUI();calListInit();
+  calGrid();calGantt();calPal();calLeg();calProg();calSelUI();calEditBar();calVistaUI();calMatUI();
 }
 function calGrid(){
-  const by=calByDay(),C=calData(),ck=calCk(),today=prToday();
-  const first=brIso(new Date(CALX.y,CALX.m,1)),last=brIso(new Date(CALX.y,CALX.m+1,0));
-  let d=brMon(first),h=['LUN','MAR','MER','GIO','VEN','SAB','DOM'].map((x,i)=>`<div class="cal-h${i===6?' sun':''}">${x}</div>`).join('');
-  while(d<=last||brDow(d)!==0){
-    const its=by[d]||[],out=d<first||d>last,dow=brDow(d);
-    const cap=calWide()?8:4;
+  calPerInit();
+  const by=calByDay(),C=calData(),ck=calCk(),today=prToday(),[a,b]=calPer();
+  let d=brMon(a),h=['LUN','MAR','MER','GIO','VEN','SAB','DOM'].map((x,i)=>`<div class="cal-h${i===6?' sun':''}">${x}</div>`).join('');
+  const cap=calWide()?8:4;
+  while(true){
+    const out=!calInP(d),its=out?[]:(by[d]||[]),dow=brDow(d);
     const chips=its.slice(0,cap).map(i=>`<div class="cal-chip" style="background:${i.c};color:${calFg(i.c)}">${esc(i.t)}</div>`).join('');
     const more=its.length>cap?`<div class="cal-more">+${its.length-cap}</div>`:'';
-    const nt=C.nt[ck+'|'+d]&&C.nt[ck+'|'+d].t;
-    h+=`<div class="cal-c${out?' out':''}${CALX.sel.has(d)?' sel':''}${d===today?' today':''}" data-d="${d}"><div class="cal-n${dow===6?' sun':''}">${+d.slice(8)}${nt?'<span class="cal-nt">●</span>':''}</div>${chips}${more}</div>`;
+    const nt=!out&&C.nt[ck+'|'+d]&&C.nt[ck+'|'+d].t;
+    h+=`<div class="cal-c${out?' out':''}${CALX.sel.has(d)?' sel':''}${d===today?' today':''}" data-d="${d}"><div class="cal-n${dow===6?' sun':''}">${d.slice(8)}/${d.slice(5,7)}${nt?'<span class="cal-nt">●</span>':''}</div>${chips}${more}</div>`;
     d=brAdd(d,1);
-    if(d>last&&brDow(d)===0)break;
+    if(d>b&&brDow(d)===0)break;
   }
   pe('cal-grid').innerHTML=h;
 }
+function calActs(){
+  const m=new Map();
+  calMine().forEach(i=>{const k=calAk(i),a=m.get(k)||{k,t:i.t,c:i.c,ids:[],mese:0,f0:i.d,fm:'',days:[]};a.ids.push(i.id);a.days.push(i.d);
+    if(i.d<a.f0)a.f0=i.d;
+    if(calInP(i.d)){a.mese++;if(!a.fm||i.d<a.fm)a.fm=i.d;}m.set(k,a);});
+  return [...m.values()].sort((a,b)=>calOrd(a.k)-calOrd(b.k)||(!a.fm)-(!b.fm)||(a.fm||a.f0).localeCompare(b.fm||b.f0)||a.t.localeCompare(b.t));
+}
+function calLeg(){
+  const all=calActs();CALX.acts=all;
+  const el=pe('cal-leg');
+  pe('cal-dl').innerHTML=[...new Set(all.map(a=>a.t))].map(t=>`<option value="${esc(t)}">`).join('');
+  if(!all.length){el.innerHTML='';return;}
+  const open=el.querySelector('details')&&el.querySelector('details').open;
+  el.innerHTML=`<details${open?' open':''} class="card" style="padding:0"><summary style="padding:12px 14px;cursor:pointer;font-weight:700">Gestisci attività (nascondi, ordina, modifica, elimina)</summary>`+all.map((a,i)=>`<div class="br-it" style="display:flex;gap:10px;align-items:center">
+    <span class="cal-dot" style="background:${a.c};${calHid(a.k)?'opacity:.3':''}"></span>
+    <div style="flex:1;min-width:0;${calHid(a.k)?'opacity:.5':''}"><b>${esc(a.t)}</b>${calHid(a.k)?' <span style="font-size:12px;color:var(--label2)">(nascosta)</span>':''}<div style="font-size:14px;font-weight:600;color:var(--label);margin-top:2px">${(()=>{const d=calDaysTxt(a.days);return (d.txt?esc(d.txt):'<span style="font-weight:400;color:var(--label2)">nessun giorno nel periodo</span>')+(d.rest?` <span style="font-weight:400;font-size:12px;color:var(--label2)">(+${d.rest} fuori periodo)</span>`:'');})()}</div><div style="font-size:12px;color:var(--label2)">${a.mese} gg nel periodo · ${a.ids.length} in totale</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${calHid(a.k)?'Mostra':'Nascondi'}</button>
+    <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
+    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere. Le attività nascoste non compaiono nel programma e nei PDF.</div>`)+`</details>`;
+}
+function calDaysTxt(days){
+  const inM=days.filter(calInP).sort(),out=[],f=d=>BR_GS[brDow(d)]+' '+(+d.slice(8))+'/'+d.slice(5,7);let s=null,p=null;
+  const push=()=>{if(s)out.push(s===p?f(s):f(s)+' – '+f(p));};
+  inM.forEach(d=>{if(s&&brAdd(p,1)===d){p=d;return;}push();s=d;p=d;});push();
+  return{txt:out.join(', '),rest:days.length-inM.length};
+}
+// valori effettivi di una voce (giorno+attività): se non impostati sulla voce valgono quelli della vecchia legenda
+function calEff(i){const m=calMetaOf(calAk(i));return{op:i.op!==undefined?i.op:(m.op||''),h:i.h!==undefined?i.h:(m.h||''),n:i.n!==undefined?i.n:(m.n||'')};}
+function calDayItems(d,by){return (by[d]||[]).slice().sort((x,y)=>calOrd(calAk(x))-calOrd(calAk(y))||((x.s||x.u)-(y.s||y.u))||(x.id<y.id?-1:1));}
+function calProg(){
+  const el=pe('cal-prog');if(!el)return;
+  const by=calByDay(),C=calData(),ck=calCk(),[a,b]=calPer(),today=prToday();
+  let h=`<div class="sec-lbl">Programma attività per giorno (${esc(calRangeLbl())})</div>`,n=0,body='';
+  for(let d=a;d<=b;d=brAdd(d,1)){
+    const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();
+    if(!its.length&&!nt)continue;n+=its.length;
+    body+=`<div class="cp-day${d===today?' today':''}"><div class="cp-d"><b>${d.slice(8)}/${d.slice(5,7)}</b><span>${BR_GS[brDow(d)]}</span></div><div class="cp-its">`+
+      its.map(i=>{const e=calEff(i);return `<div class="cp-it"><div class="cp-t"><span class="cal-dot" style="background:${i.c}"></span><b>${esc(i.t)}</b><button class="br-x" title="Togli da questo giorno" aria-label="Togli da questo giorno" onclick="calItDel('${i.id}')">✕</button></div><div class="cp-f"><input class="br-in" inputmode="decimal" placeholder="Operatori" aria-label="Operatori" value="${esc(e.op)}" oninput="calItSet('${i.id}','op',this.value)"><input class="br-in" inputmode="decimal" placeholder="Ore" aria-label="Ore" value="${esc(e.h)}" oninput="calItSet('${i.id}','h',this.value)"><input class="br-in cp-n" placeholder="Note" aria-label="Note" value="${esc(e.n)}" oninput="calItSet('${i.id}','n',this.value)"></div></div>`;}).join('')+
+      (nt?`<div class="cp-nt">Nota del giorno: ${esc(nt)}</div>`:'')+`</div></div>`;
+  }
+  if(!body){el.innerHTML=h+`<div class="pr-alert info">Nessuna attività nel periodo. Seleziona i giorni sul calendario, scrivi l'attività con operatori e ore e premi Applica: il programma compare qui.</div>`;return;}
+  el.innerHTML=h+`<div class="card" style="padding:0 4px">${body}</div>`;
+}
+function calItSet(id,f,v){
+  const i=calData().it.find(x=>x.id===id);if(!i)return;
+  i[f]=String(v).slice(0,f==='n'?160:20);i.u=Date.now();if(!i.s)i.s=i.u-1;prSave();
+}
+function calItDel(id){calKill([id]);prSave();calRender();}
+function calReset(){
+  const [a,b]=calPer(),ids=calMine().filter(i=>i.d>=a&&i.d<=b).map(i=>i.id),ck=calCk(),C=calData();
+  const nk=Object.keys(C.nt).filter(k=>k.startsWith(ck+'|')&&k.slice(-10)>=a&&k.slice(-10)<=b&&(C.nt[k].t||''));
+  if(!ids.length&&!nk.length){toast('Il periodo è già vuoto');return;}
+  if(!confirm(`Svuotare tutte le attività dal ${prFmtD(a)} al ${prFmtD(b)} per questo cantiere?`))return;
+  calKill(ids);nk.forEach(k=>{C.nt[k]={t:'',u:Date.now()};});
+  CALX.sel.clear();prSave();calRender();toast('Periodo svuotato');
+}
+function calText(){
+  const [a,b]=calPer(),by=calByDay(),ck=calCk(),C=calData();
+  let t=`PROGRAMMA LAVORI - ${BRX.cant}\nDal ${prFmtD(a)} al ${prFmtD(b)}\n`;
+  const comp=gv('p-compilatore');if(comp)t+='Preparato da: '+comp+'\n';
+  for(let d=a;d<=b;d=brAdd(d,1)){
+    const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();
+    if(!its.length&&!nt)continue;
+    t+=`\n${calDM(d)}`;
+    its.forEach(i=>{const e=calEff(i);t+=`\n- ${i.t}`+(e.op?` - ${e.op} operatori`:'')+(e.h?` - ${e.h} ore`:'')+(e.n?` (${e.n})`:'');});
+    if(nt)t+=`\n  Nota: ${nt}`;
+  }
+  const M=calMat(a,b),q=x=>'\n- '+x.t+(x.q?' ('+x.q+')':'')+(x.e?' - entro '+prFmtD(x.e):'')+(x.u?' - URGENTE':'');
+  if(M.mat.length)t+='\n\nMATERIALI DA ORDINARE'+M.mat.map(q).join('');
+  if(M.att.length)t+='\n\nATTREZZATURE MANCANTI'+M.att.map(q).join('');
+  return t;
+}
+function calOk(){
+  if(!BRX.cant){toast('Inserisci il cantiere');return false;}
+  const [a,b]=calPer();
+  if(!calMineV().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
+  return true;
+}
+const calPdfName=(a,tag)=>(a+'_Calendario-'+tag+'_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
+function calPdf(){
+  if(!calOk())return false;
+  const mode=gv('cal-pm')||'cl',land=gv('cal-po')==='l',wantMat=!!(pe('cal-pmat')&&pe('cal-pmat').checked);
+  const [a,b]=calPer(),hasC=mode==='c'||mode==='cl',hasG=mode==='g'||mode==='gl',hasL=mode==='l'||mode==='cl'||mode==='gl';
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',orientation:land?'landscape':'portrait'});pdfBrand(doc);
+  const P={PW:land?297:210,PH:land?210:297,MX:10,land};P.CW=P.PW-2*P.MX;const {PW,PH,MX,CW}=P,BOT=PH-16;
+  const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const fit=(s,w)=>{s=pdfSafe(s);if(doc.getTextWidth(s)<=w)return s;while(s.length>1&&doc.getTextWidth(s+'...')>w)s=s.slice(0,-1);return s.trimEnd()+'...';};
+  const np=()=>doc.addPage('a4',land?'landscape':'portrait');
+  const by=calByDay(),C=calData(),ck=calCk();
+  // intestazione
+  const title=hasL&&!hasC&&!hasG?'Programma attivita':hasG?'Gantt lavori':'Calendario lavori';
+  doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(30,30,30);doc.text(title,MX,15);pdfLogo(doc,PW-MX-34,3.5,34);
+  doc.setFont('helvetica','normal');doc.setFontSize(11.5);doc.setTextColor(80,80,80);doc.text(pdfSafe(BRX.cant),MX,21.5);
+  doc.setFontSize(10.5);doc.text('Dal '+prFmtD(a)+' al '+prFmtD(b),MX,27.5);
+  const comp=gv('p-compilatore');doc.setFontSize(9);if(comp)doc.text(pdfSafe('Preparato da: '+comp),PW-MX,21.5,{align:'right'});
+  doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,27.5,{align:'right'});
+  let y=33;
+  // ── calendario a settimane del periodo
+  const drawCal=()=>{
+    const first=brMon(a),rows=Math.ceil((calDiff(first,b)+1)/7),cw=CW/7,hh=6;
+    const rh=rows===1?(land?34:38):rows===2?(land?32:30):rows<=4?(land?24:24):20;
+    const head=()=>{['LUN','MAR','MER','GIO','VEN','SAB','DOM'].forEach((x,i)=>{doc.setFillColor(240,240,243);doc.rect(MX+i*cw,y,cw,hh,'F');doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...(i===6?[200,40,40]:[90,90,95]));doc.text(x,MX+i*cw+cw/2,y+4.2,{align:'center'});});y+=hh;};
+    if(y+hh+rh>BOT){np();y=18;}
+    head();
+    for(let r=0;r<rows;r++){
+      if(y+rh>BOT){np();y=18;head();}
+      for(let c=0;c<7;c++){
+        const d=brAdd(first,r*7+c),x=MX+c*cw,out=!calInP(d);
+        if(out){doc.setFillColor(246,246,248);doc.rect(x,y,cw,rh,'F');}
+        doc.setDrawColor(200,200,205);doc.setLineWidth(.2);doc.rect(x,y,cw,rh,'S');
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...(out?[175,175,180]:(c===6?[200,40,40]:[30,30,35])));
+        doc.text(d.slice(8)+'/'+d.slice(5,7),x+1.5,y+4.3);
+        if(out)continue;
+        const its=calDayItems(d,by),ch=4.1,cap=Math.max(1,Math.floor((rh-6.5)/(ch+.6)));
+        const show=its.length>cap?its.slice(0,cap-1):its;doc.setFontSize(7);
+        show.forEach((it,k)=>{const cy=y+6.5+k*(ch+.6);doc.setFillColor(...hex(it.c));doc.roundedRect(x+1,cy,cw-2,ch,.8,.8,'F');doc.setFont('helvetica','bold');doc.setTextColor(...hex(calFg(it.c)));doc.text(fit(it.t,cw-4),x+2,cy+2.95);});
+        if(its.length>show.length){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,100,105);doc.text('+'+(its.length-show.length)+' altre',x+2,y+6.5+show.length*(ch+.6)+3);}
+        if(((C.nt[ck+'|'+d]||{}).t||'').trim()){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(120,120,125);doc.text('nota',x+cw-1.5,y+4.3,{align:'right'});}
+      }
+      y+=rh;
+    }
+    y+=5;
+  };
+  // ── Gantt del periodo
+  const drawGantt=()=>{
+    const rows=calGanttRows(a,b),n=calDiff(a,b)+1,LW=land?58:46,cw=(CW-LW)/n,rh=7,X0=MX+LW;let idx=0;
+    while(idx<rows.length){
+      const room=Math.floor((BOT-y-13)/rh);
+      if(room<2&&y>25){np();y=18;continue;}
+      const R=rows.slice(idx,idx+Math.max(room,1)),top=y,H=top+13+R.length*rh;
+      doc.setFillColor(240,240,243);doc.rect(MX,top,CW,13,'F');
+      for(let i=0;i<n;){const d=brAdd(a,i),dm=brPd(d).getMonth(),left=brIso(new Date(brPd(d).getFullYear(),dm+1,0)),len=Math.min(n-i,calDiff(d,left)+1);
+        doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(70,70,75);
+        if(len*cw>14)doc.text(pdfSafe(CAL_MESI[dm]+' '+brPd(d).getFullYear()),X0+i*cw+1,top+4.2);
+        doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.line(X0+i*cw,top,X0+i*cw,H);i+=len;}
+      for(let i=0;i<n;i++){const d=brAdd(a,i),dw=brDow(d),x=X0+i*cw;
+        if(dw===6){doc.setFillColor(238,238,241);doc.rect(x,top+13,cw,H-top-13,'F');}
+        const show=cw>=3.1||dw===0||+d.slice(8)===1;
+        if(show){doc.setFont('helvetica','bold');doc.setFontSize(cw>=3.1?6.2:5.5);doc.setTextColor(...(dw===6?[200,40,40]:[60,60,65]));
+          doc.text(String(+d.slice(8)),x+cw/2,top+9,{align:'center'});
+          if(cw>=3.1){doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.text('LMMGVSD'[dw],x+cw/2,top+12,{align:'center'});}}
+      }
+      R.forEach((r,i)=>{
+        const yy=top+13+i*rh;
+        doc.setDrawColor(222,222,226);doc.setLineWidth(.15);doc.line(MX,yy+rh,PW-MX,yy+rh);
+        doc.setFillColor(...hex(r.c));doc.roundedRect(MX+1,yy+rh/2-1.7,3.4,3.4,.5,.5,'F');
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(35,35,40);doc.text(fit(r.t,LW-8),MX+6.5,yy+rh/2+1.1);
+        r.runs.forEach(([s,e])=>{doc.setFillColor(...hex(r.c));doc.roundedRect(X0+calDiff(a,s)*cw+.15,yy+1.4,(calDiff(s,e)+1)*cw-.3,rh-2.8,.7,.7,'F');});
+      });
+      doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.rect(MX,top,CW,H-top);
+      y=H+5;idx+=R.length;
+      if(idx<rows.length){np();y=18;}
+    }
+  };
+  // ── elenco per giorno: DATA | ATTIVITA | OPER. | ORE | NOTE
+  const drawList=(sub)=>{
+    const days=[];for(let d=a;d<=b;d=brAdd(d,1)){const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();if(its.length||nt)days.push({d,its,nt});}
+    const eff=new Map();days.forEach(x=>x.its.forEach(i=>eff.set(i.id,calEff(i))));
+    const hasM=[...eff.values()].some(e=>e.op||e.h),hasN=[...eff.values()].some(e=>e.n);
+    const wD=26,wO=hasM?17:0,wH=hasM?15:0,wN=hasN?Math.round(CW*(land?.3:.27)):0,wA=CW-wD-wO-wH-wN;
+    const xD=MX,xA=MX+wD,xO=xA+wA,xH=xO+wO,xN=xH+wH;
+    const head=()=>{doc.setFillColor(240,240,243);doc.rect(MX,y,CW,6.5,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(90,90,95);
+      doc.text('GIORNO',xD+2,y+4.4);doc.text('ATTIVITA',xA+6,y+4.4);if(hasM){doc.text('OPER.',xO,y+4.4);doc.text('ORE',xH,y+4.4);}if(hasN)doc.text('NOTE',xN,y+4.4);y+=6.5;};
+    if(sub){if(y+30>BOT){np();y=18;}doc.setFont('helvetica','bold');doc.setFontSize(12.5);doc.setTextColor(30,30,30);doc.text('Programma attivita',MX,y+4);y+=8;}
+    else if(y+30>BOT){np();y=18;}
+    head();
+    days.forEach(({d,its,nt})=>{
+      const lines=its.length?its:[null];
+      lines.forEach((it,k)=>{
+        let la=[],ln=[],h;
+        if(it){doc.setFont('helvetica','bold');doc.setFontSize(10.5);la=doc.splitTextToSize(pdfSafe(it.t),wA-8);const e=eff.get(it.id);doc.setFont('helvetica','normal');doc.setFontSize(9.5);ln=hasN?doc.splitTextToSize(pdfSafe(e.n),wN-2):[];}
+        else{doc.setFont('helvetica','italic');doc.setFontSize(9.5);la=doc.splitTextToSize(pdfSafe('Nota: '+nt),wA+wO+wH+wN-10);}
+        h=Math.max(la.length*4.7,ln.length*4.3,k===0?8.4:5)+3.4;
+        if(y+h>BOT){np();y=18;head();}
+        if(k===0){doc.setDrawColor(150,150,158);doc.setLineWidth(.35);doc.line(MX,y,PW-MX,y);}
+        else{doc.setDrawColor(225,225,230);doc.setLineWidth(.15);doc.line(xA,y,PW-MX,y);}
+        doc.setFont('helvetica','bold');
+        if(k===0){doc.setFontSize(16);doc.setTextColor(20,20,25);doc.text(d.slice(8)+'/'+d.slice(5,7),xD+2,y+7.2);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(110,110,115);doc.text(BR_GS[brDow(d)].toUpperCase(),xD+2,y+11.2);}
+        if(it){
+          const e=eff.get(it.id);
+          doc.setFillColor(...hex(it.c));doc.roundedRect(xA+1,y+2.6,4,4,.7,.7,'F');
+          doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(30,30,30);la.forEach((t,i)=>doc.text(t,xA+7,y+5.9+i*4.7));
+          doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(40,40,45);
+          if(hasM){doc.text(pdfSafe(e.op||'-'),xO,y+5.9);doc.text(pdfSafe(e.h||'-'),xH,y+5.9);}
+          doc.setFontSize(9);ln.forEach((t,i)=>doc.text(t,xN,y+5.9+i*4.3));
+        }else{doc.setTextColor(90,90,95);la.forEach((t,i)=>doc.text(t,xA+2,y+5.9+i*4.7));}
+        y+=h;
+      });
+    });
+    doc.setDrawColor(150,150,158);doc.setLineWidth(.35);doc.line(MX,y,PW-MX,y);y+=4;
+  };
+  if(hasC)drawCal();
+  if(hasG)drawGantt();
+  if(hasL)drawList(hasC||hasG);
+  if(wantMat){const M=calMat(a,b);if(M.mat.length||M.att.length)calPdfMat(doc,M,P);}
+  calFooters(doc,P);
+  const blob=doc.output('blob');
+  const tag={l:'Elenco',c:'Calendario',g:'Gantt',cl:'Calendario-elenco',gl:'Gantt-elenco'}[mode]||'Programma',fn=calPdfName(a,tag);
+  showPdfPreview('cal-out',URL.createObjectURL(blob),fn,'PDF del programma lavori ('+(land?'orizzontale':'verticale')+', pronto da stampare o inviare)');
+  calLast={blob,fn,sig:calSig()};
+  uploadPdfToDrive(blob,fn);
+  return true;
+}
+function calSig(){const [a,b]=calPer();return [gv('cal-pm'),gv('cal-po'),pe('cal-pmat')&&pe('cal-pmat').checked,BRX.cant,a,b].join('|')+JSON.stringify(calMineV().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calData().ac)+JSON.stringify(calData().nt)+JSON.stringify(calMat(a,b));}
+function calMail(){
+  if(!calOk())return;
+  const em=brSelected().map(c=>c.email).filter(Boolean);
+  if(!em.length){toast('Nessun destinatario con email selezionato (tab Briefing > Giornaliero > Destinatari)');return;}
+  if(!calFresh())calPdf();
+  location.href='mailto:'+em.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('Programma lavori - '+BRX.cant+' - '+calRangeLbl())+'&body='+encodeURIComponent((calText()+'\n\n(PDF in allegato)').slice(0,1800));
+  toast('Allega il PDF scaricato alla mail');
+}
+const calRange=()=>[CALX.pa,CALX.pb];
+const calRangeLbl=()=>prFmtD(CALX.pa)+' - '+prFmtD(CALX.pb);
+function calVista(v){CALX.vista=v;calRender();}
+function calVistaUI(){
+  const g=CALX.vista==='g';
+  pe('cal-vm').classList.toggle('active',!g);pe('cal-vg').classList.toggle('active',g);
+  pe('cal-grid').style.display=g?'none':'';pe('cal-gantt').style.display=g?'':'none';
+  ['cal-sel','cal-ed'].forEach(id=>{const e=pe(id);if(e)e.style.display=g?'none':'';});
+  pe('cal-title').textContent=calRangeLbl();
+}
+function calPdfMat(doc,M,P){
+  const {PW,PH,MX,CW,land}=P;let y=18;
+  doc.addPage('a4',land?'landscape':'portrait');
+  const head=t=>{doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text(t,MX,y);y+=7;};
+  const page=()=>{if(y>PH-22){doc.addPage('a4',land?'landscape':'portrait');y=18;}};
+  head('Materiali e attrezzature da procurare - '+pdfSafe(calRangeLbl()));
+  const tab=(title,cols,rows)=>{
+    if(!rows.length)return;
+    page();doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(60,60,65);doc.text(title,MX,y);y+=5;
+    let x=MX;doc.setFillColor(240,240,243);doc.rect(MX,y-3.6,CW,5.6,'F');doc.setFontSize(8.5);doc.setTextColor(90,90,95);
+    cols.forEach(c=>{doc.text(c[0],x+1.5,y);x+=c[1];});y+=5;
+    rows.forEach(r=>{
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,35);
+      const cells=r.map((t,i)=>doc.splitTextToSize(pdfSafe(t)||'-',cols[i][1]-3)),h=Math.max(...cells.map(c=>c.length))*4.2+1.8;
+      if(y+h>PH-16){doc.addPage('a4',land?'landscape':'portrait');y=18;}
+      let xx=MX;cells.forEach((c,i)=>{doc.text(c,xx+1.5,y);xx+=cols[i][1];});
+      doc.setDrawColor(228,228,232);doc.setLineWidth(.15);doc.line(MX,y+h-3.4,PW-MX,y+h-3.4);y+=h;
+    });y+=4;
+  };
+  const w=f=>Math.round(CW*f);
+  tab('Materiali da ordinare',[['Materiale',w(.4)],['Quantita',w(.13)],['Necessario entro',w(.17)],['Note',CW-w(.4)-w(.13)-w(.17)]],M.mat.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',x.n]));
+  tab('Attrezzature mancanti',[['Attrezzatura',w(.4)],['Quantita',w(.13)],['Serve entro',w(.17)],['Per / priorita',CW-w(.4)-w(.13)-w(.17)]],M.att.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',[x.p,x.u?'URGENTE':''].filter(Boolean).join(' - ')]));
+}
+function calFooters(doc,P){
+  const {PW,PH,MX}=P,n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){
+    doc.setPage(i);doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-12,PW-MX,PH-12);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(150,150,150);
+    doc.text('Generato da Site Manager - Omnia Solution',MX,PH-7.5);doc.text(`Pag. ${i}/${n}`,PW-MX,PH-7.5,{align:'right'});
+  }
+}
+
+const calWide=()=>window.innerWidth>=900;
 function calPal(){
   pe('cal-pal').innerHTML=CAL_COL.map(c=>`<button class="cal-sw${c===CALX.color?' on':''}" style="background:${c}" aria-label="Colore" onclick="calPick('${c}')"></button>`).join('');
 }
@@ -3000,34 +3282,6 @@ function calTxtIn(){
   const t=gv('cal-txt').trim().toLowerCase();if(!t)return;
   const a=calMine().find(i=>i.t.trim().toLowerCase()===t);
   if(a&&a.c!==CALX.color){CALX.color=a.c;calPal();}
-}
-function calActs(){
-  const m=new Map();
-  const ym=CALX.y+'-'+String(CALX.m+1).padStart(2,'0');
-  calMine().forEach(i=>{const k=calAk(i),a=m.get(k)||{k,t:i.t,c:i.c,ids:[],mese:0,f0:i.d,fm:'',days:[]};a.ids.push(i.id);a.days.push(i.d);
-    if(i.d<a.f0)a.f0=i.d;
-    if(i.d.slice(0,7)===ym){a.mese++;if(!a.fm||i.d<a.fm)a.fm=i.d;}m.set(k,a);});
-  return [...m.values()].sort((a,b)=>calOrd(a.k)-calOrd(b.k)||(!a.fm)-(!b.fm)||(a.fm||a.f0).localeCompare(b.fm||b.f0)||a.t.localeCompare(b.t));
-}
-function calLeg(){
-  const all=calActs();CALX.acts=all;
-  const el=pe('cal-leg');
-  pe('cal-dl').innerHTML=[...new Set(all.map(a=>a.t))].map(t=>`<option value="${esc(t)}">`).join('');
-  if(!all.length){el.innerHTML='';return;}
-  el.innerHTML=`<div class="sec-lbl">Attività (legenda)</div><div class="card">`+all.map((a,i)=>`<div class="br-it" style="display:flex;gap:10px;align-items:center">
-    <span class="cal-dot" style="background:${a.c};${calHid(a.k)?'opacity:.3':''}"></span>
-    <div style="flex:1;min-width:0;${calHid(a.k)?'opacity:.5':''}"><b>${esc(a.t)}</b>${calHid(a.k)?' <span style="font-size:12px;color:var(--label2)">(nascosta)</span>':''}<div style="font-size:14px;font-weight:600;color:var(--label);margin-top:2px">${(()=>{const d=calDaysTxt(a.days,CALX.y+'-'+String(CALX.m+1).padStart(2,'0'));return (d.txt?esc(d.txt):'<span style="font-weight:400;color:var(--label2)">nessun giorno in questo mese</span>')+(d.rest?` <span style="font-weight:400;font-size:12px;color:var(--label2)">(+${d.rest} in altri mesi)</span>`:'');})()}</div><div style="font-size:12px;color:var(--label2)">${a.mese} gg in questo mese · ${a.ids.length} in totale</div>
-      <div style="display:flex;gap:8px;margin-top:6px"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Operatori" value="${esc(calMetaOf(a.k).op)}" oninput="calMetaSet(${i},'op',this.value)"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Ore" value="${esc(calMetaOf(a.k).h)}" oninput="calMetaSet(${i},'h',this.value)"></div><input class="br-in" style="margin-top:6px" placeholder="Note per il caposquadra (opz.)" value="${esc(calMetaOf(a.k).n||'')}" oninput="calMetaSet(${i},'n',this.value)"></div>
-    <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end"><button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${calHid(a.k)?'Mostra':'Nascondi'}</button>
-    <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
-    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere.</div>`)+`</div>`;
-}
-function calDaysTxt(days,ym){
-  const inM=days.filter(d=>d.slice(0,7)===ym).sort(),out=[],f=d=>BR_GS[brDow(d)]+' '+(+d.slice(8));let s=null,p=null;
-  const push=()=>{if(s)out.push(s===p?f(s):f(s)+' – '+f(p));};
-  inM.forEach(d=>{if(s&&brAdd(p,1)===d){p=d;return;}push();s=d;p=d;});push();
-  return{txt:out.join(', '),rest:days.length-inM.length};
 }
 function calHidTog(i){
   const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};
@@ -3081,15 +3335,18 @@ function calApply(){
   const t=gv('cal-txt').trim(),days=calSelDays();
   if(!days.length){toast('Seleziona prima uno o più giorni');return;}
   if(!t){toast('Scrivi l\'attività');pe('cal-txt').focus();return;}
-  calAddTo(days,t,CALX.color);
-  CALX.sel.clear();CALX.anchor=null;pe('cal-txt').value='';
+  calAddTo(days,t,CALX.color,calFields());
+  CALX.sel.clear();CALX.anchor=null;pe('cal-txt').value='';['cal-op','cal-ho','cal-no'].forEach(id=>{pe(id).value='';});
   const used=new Set(calMine().map(i=>i.c));
   CALX.color=CAL_COL.find(c=>!used.has(c))||CAL_COL[(CAL_COL.indexOf(CALX.color)+1)%CAL_COL.length];
   prSave();calRender();toast('Attività applicata ✓');
 }
-function calAddTo(days,t,c){
-  const C=calData(),ck=calCk(),have=new Set(calMine().map(i=>i.d+'|'+calAk(i))),now=Date.now();
-  days.forEach((d,n)=>{const k=d+'|'+t.toLowerCase()+'|'+c;if(have.has(k))return;have.add(k);C.it.push({id:'c'+brUid()+n,ck,d,t,c,u:now+n});});
+function calFields(){return{op:gv('cal-op').trim(),h:gv('cal-ho').trim(),n:gv('cal-no').trim()};}
+function calAddTo(days,t,c,x){
+  x=x||{};const C=calData(),ck=calCk(),have=new Map(calMine().map(i=>[i.d+'|'+calAk(i),i])),now=Date.now();
+  days.forEach((d,n)=>{const k=d+'|'+t.toLowerCase()+'|'+c,ex=have.get(k);
+    if(ex){['op','h','n'].forEach(f=>{if(x[f]){ex[f]=x[f].slice(0,f==='n'?160:20);ex.u=now+n;}});return;}
+    const it={id:'c'+brUid()+n,ck,d,t,c,u:now+n,s:now+n};['op','h','n'].forEach(f=>{if(x[f])it[f]=x[f].slice(0,f==='n'?160:20);});C.it.push(it);have.set(k,it);});
 }
 function calEditAct(i){
   const a=CALX.acts[i];if(!a)return;
@@ -3112,7 +3369,7 @@ function calSaveEdit(){
   {const C=calData(),ok=calCk()+'|'+old,nk=calCk()+'|'+(t.trim().toLowerCase()+'|'+c);if(ok!==nk&&C.ac[ok]){if(!C.ac[nk])C.ac[nk]=Object.assign({},C.ac[ok],{u:now});delete C.ac[ok];}}
   calMine().slice().sort((a,b)=>a.u-b.u).forEach(i=>{const k=i.d+'|'+calAk(i);if(seen.has(k))dup.push(i.id);else seen.add(k);});
   calKill(dup);
-  const days=calSelDays();if(days.length)calAddTo(days,t,c);
+  const days=calSelDays();if(days.length)calAddTo(days,t,c,calFields());
   CALX.edit=null;CALX.sel.clear();pe('cal-txt').value='';
   prSave();calRender();toast('Attività modificata ✓');
 }
@@ -3122,31 +3379,23 @@ function calDelAct(i){
   delete calData().ac[calCk()+'|'+a.k];calKill(a.ids);if(CALX.edit&&CALX.edit.k===a.k){CALX.edit=null;pe('cal-txt').value='';}
   prSave();calRender();toast('Attività eliminata');
 }
-function calMonthRange(){return [brIso(new Date(CALX.y,CALX.m,1)),brIso(new Date(CALX.y,CALX.m+1,0))];}
-function calReset(){
-  const [a,b]=calMonthRange(),ids=calMine().filter(i=>i.d>=a&&i.d<=b).map(i=>i.id),ck=calCk(),C=calData();
-  const nk=Object.keys(C.nt).filter(k=>k.startsWith(ck+'|')&&k.slice(-10)>=a&&k.slice(-10)<=b&&(C.nt[k].t||''));
-  if(!ids.length&&!nk.length){toast('Il mese è già vuoto');return;}
-  if(!confirm(`Svuotare tutto il calendario di ${CAL_MESI[CALX.m]} ${CALX.y} per questo cantiere?`))return;
-  calKill(ids);nk.forEach(k=>{C.nt[k]={t:'',u:Date.now()};});
-  CALX.sel.clear();prSave();calRender();toast('Mese svuotato');
-}
 function calToBrief(){
   const d=calSelDays()[0];if(calSelDays().length!==1)return;
   const its=(calByDay()[d]||[]);if(!its.length)return;
-  BRX.tipo='g';BRX.data=d;BRX.auto=false;const b=brCur(true);
+  showPane('briefing');BRX.tipo='g';BRX.data=d;BRX.auto=false;const b=brCur(true);
   const ex=new Set();b.sq.forEach(s=>s.lav.forEach(l=>ex.add(l.testo.trim().toLowerCase())));
   const nuove=[...new Set(its.map(i=>i.t.trim()))].filter(t=>!ex.has(t.toLowerCase()));
   if(nuove.length)b.sq.push({id:brUid(),nome:'',capo:'',lav:nuove.map(t=>({id:brUid(),giorno:'0',testo:t,luogo:'',chi:'',istr:''}))});
   brTouch(b);
   pe('br-data').value=d;brLbl();brRender();
   toast(nuove.length?'Lavorazioni portate nel briefing - assegna squadra e dettagli':'Le attività sono già nel briefing');
-  window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0});
 }
 // selezione: tocco = seleziona/deseleziona, trascinamento orizzontale = intervallo
 function calPaint(a,b,on){
   let lo=a<b?a:b,hi=a<b?b:a,n=0;
-  while(lo<=hi&&n++<70){
+  while(lo<=hi&&n++<200){
+    if(!calInP(lo)){lo=brAdd(lo,1);continue;}
     if(on)CALX.sel.add(lo);else CALX.sel.delete(lo);
     const c=pe('cal-grid').querySelector('[data-d="'+lo+'"]');if(c)c.classList.toggle('sel',on);
     lo=brAdd(lo,1);
@@ -3157,7 +3406,7 @@ function calBind(){
   const cellAt=(x,y)=>{const e=document.elementFromPoint(x,y);return e&&e.closest?e.closest('.cal-c'):null;};
   g.addEventListener('pointerdown',e=>{
     const c=e.target.closest&&e.target.closest('.cal-c');if(!c)return;
-    const d=c.dataset.d;
+    if(c.classList.contains('out'))return;const d=c.dataset.d;
     if(e.shiftKey&&CALX.anchor){calPaint(CALX.anchor,d,true);calSelUI();return;}
     calDrag={d,x:e.clientX,y:e.clientY,id:e.pointerId,type:e.pointerType,on:!CALX.sel.has(d),moved:false,last:d};
   });
@@ -3180,120 +3429,6 @@ function calBind(){
   g.addEventListener('pointercancel',e=>{const s=calDrag;if(!s)return;calDrag=null;if(s.moved){CALX.anchor=s.last;calSelUI();}});
 }
 // testo per WhatsApp / mail
-function calText(){
-  const [a,b]=calRange(),by=calByDay(),ck=calCk(),C=calData();
-  let t=`${CALX.vista==='g'?'GANTT':'CALENDARIO'} LAVORI - ${BRX.cant}\n${calRangeLbl()}\n`;
-  const gg=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
-  for(let d=a;d<=b;d=brAdd(d,1)){
-    const its=by[d]||[],nt=((C.nt[ck+'|'+d]||{}).t||'').trim();
-    if(!its.length&&!nt)continue;
-    t+=`\n${gg[brDow(d)]} ${+d.slice(8)}/${d.slice(5,7)}: `+[...its.map(i=>i.t),...(nt?['('+nt+')']:[])].join(' + ');
-  }
-  const M=calMat(a,b),q=x=>'\n- '+x.t+(x.q?' ('+x.q+')':'')+(x.e?' - entro '+prFmtD(x.e):'')+(x.u?' - URGENTE':'');
-  if(M.mat.length)t+='\n\nMATERIALI DA ORDINARE'+M.mat.map(q).join('');
-  if(M.att.length)t+='\n\nATTREZZATURE MANCANTI'+M.att.map(q).join('');
-  return t;
-}
-function calOk(){
-  if(!BRX.cant){toast('Inserisci il cantiere');return false;}
-  const [a,b]=calRange();
-  if(!calMineV().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
-  return true;
-}
-function calPdfMese(){
-  if(!calOk())return false;
-  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'});pdfBrand(doc);
-  const PW=297,PH=210,MX=10,[a,b]=calMonthRange(),by=calByDay(),ck=calCk(),C=calData();
-  const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-  doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(30,30,30);
-  doc.text('Calendario lavori',MX,15);pdfLogo(doc,PW-MX-34,3.5,34);
-  doc.setFontSize(12);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
-  doc.text(pdfSafe(BRX.cant)+'  -  '+CAL_MESI[CALX.m]+' '+CALX.y,MX,21.5);
-  const comp=gv('p-compilatore');
-  if(comp){doc.setFontSize(9);doc.text(pdfSafe('Preparato da: '+comp),PW-MX,15,{align:'right'});}
-  doc.setFontSize(9);doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,21.5,{align:'right'});
-  // legenda (attività con almeno un giorno nel mese)
-  const leg=new Map();
-  calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=leg.get(k)||{k,t:i.t,c:i.c,n:0,f:i.d,days:[]};e.n++;e.days.push(i.d);if(i.d<e.f)e.f=i.d;leg.set(k,e);});
-  const L=[...leg.values()].sort((x,y)=>calOrd(x.k)-calOrd(y.k)||x.f.localeCompare(y.f)||x.t.localeCompare(y.t));
-  L.forEach(e=>{const m=calMetaOf(e.k);e.op=(m.op||'').trim();e.h=(m.h||'').trim();});
-  const hasMeta=L.some(e=>e.op||e.h);
-  const LC=1,LW=PW-2*MX,legMax=Math.min(L.length,10),legH=legMax?legMax*4.9+9:0;
-  const top=26,hh=6,bottom=PH-16-legH;
-  const first=brMon(brIso(new Date(CALX.y,CALX.m,1)));
-  const rows=Math.ceil((brDow(a)+ (+b.slice(8)))/7);
-  const cw=(PW-2*MX)/7,rh=(bottom-top-hh)/rows;
-  ['LUN','MAR','MER','GIO','VEN','SAB','DOM'].forEach((x,i)=>{
-    doc.setFillColor(240,240,243);doc.rect(MX+i*cw,top,cw,hh,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...(i===6?[200,40,40]:[90,90,95]));
-    doc.text(x,MX+i*cw+cw/2,top+4.2,{align:'center'});
-  });
-  const fit=(s,w)=>{s=pdfSafe(s);if(doc.getTextWidth(s)<=w)return s;while(s.length>1&&doc.getTextWidth(s+'...')>w)s=s.slice(0,-1);return s.trimEnd()+'...';};
-  for(let r=0;r<rows;r++)for(let c=0;c<7;c++){
-    const d=brAdd(first,r*7+c),x=MX+c*cw,y=top+hh+r*rh,out=d<a||d>b;
-    doc.setDrawColor(200,200,205);doc.setLineWidth(.2);
-    doc.rect(x,y,cw,rh,'S');
-    doc.setFont('helvetica','bold');doc.setFontSize(9);
-    doc.setTextColor(...(out?[175,175,180]:(c===6?[200,40,40]:[40,40,45])));
-    doc.text(String(+d.slice(8)),x+1.5,y+4);
-    const its=by[d]||[],ch=4.1,cap=Math.max(1,Math.floor((rh-6)/(ch+.6)));
-    const show=its.length>cap?its.slice(0,cap-1):its;
-    doc.setFontSize(7);
-    show.forEach((it,k)=>{
-      const cy=y+6+k*(ch+.6);
-      doc.setFillColor(...hex(it.c));doc.roundedRect(x+1,cy,cw-2,ch,.8,.8,'F');
-      doc.setFont('helvetica','bold');doc.setTextColor(...hex(calFg(it.c)));
-      doc.text(fit(it.t,cw-4),x+2,cy+2.95);
-    });
-    if(its.length>show.length){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,100,105);doc.text('+'+(its.length-show.length)+' altre',x+2,y+6+show.length*(ch+.6)+3);}
-    if(((C.nt[ck+'|'+d]||{}).t||'').trim()){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(120,120,125);doc.text('nota',x+cw-1.5,y+4,{align:'right'});}
-  }
-  // legenda a tabella: attività | giorni | operatori | ore
-  if(legMax){
-    const ym=CALX.y+'-'+String(CALX.m+1).padStart(2,'0'),y0=bottom+4.5;
-    const cA=MX+6,cG=MX+80,cO=PW-MX-34,cH=PW-MX-14;
-    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(110,110,115);
-    doc.text('ATTIVITA',cA,y0);doc.text('GIORNI',cG,y0);if(hasMeta){doc.text('OPERATORI',cO,y0);doc.text('ORE',cH,y0);}
-    L.slice(0,legMax).forEach((e,i)=>{
-      const y=y0+4.6+i*4.9;
-      doc.setFillColor(...hex(e.c));doc.roundedRect(MX,y-3,4,3.6,.6,.6,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,45);
-      doc.text(fit(e.t,cG-cA-3),cA,y);
-      doc.setFont('helvetica','normal');
-      doc.text(fit(calDaysTxt(e.days,ym).txt,(hasMeta?cO:PW-MX)-cG-3),cG,y);
-      if(hasMeta){doc.text(fit(e.op||'-',cH-cO-2),cO,y);doc.text(fit(e.h||'-',PW-MX-cH),cH,y);}
-    });
-  }
-  // pagina 2: attività oltre la legenda + note
-  const notes=[];
-  for(let d=a;d<=b;d=brAdd(d,1)){const t=((C.nt[ck+'|'+d]||{}).t||'').trim();if(t)notes.push([d,t]);}
-  const extra=L.slice(legMax);
-  if(notes.length||extra.length){
-    doc.addPage('a4','landscape');let y=18;
-    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text('Calendario lavori - '+CAL_MESI[CALX.m]+' '+CALX.y+' (segue)',MX,y);y+=8;
-    const gg=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],lines=[];
-    if(extra.length){lines.push({h:'Altre attività'});extra.forEach(e=>lines.push({c:e.c,t:e.t+'  ('+e.n+' gg: '+calDaysTxt(e.days,CALX.y+'-'+String(CALX.m+1).padStart(2,'0')).txt+')'+(e.op?'  -  '+e.op+' op.':'')+(e.h?'  -  '+e.h+' h':'')}));}
-    if(notes.length){lines.push({h:'Note dei giorni'});notes.forEach(([d,t])=>lines.push({t:gg[brDow(d)]+' '+prFmtD(d)+': '+t}));}
-    lines.forEach(l=>{
-      if(l.h){y+=3;if(y>PH-20){doc.addPage('a4','landscape');y=18;}doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(60,60,65);doc.text(l.h,MX,y);y+=6;return;}
-      doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(40,40,45);
-      doc.splitTextToSize(pdfSafe(l.t),PW-2*MX-(l.c?8:0)).forEach(s=>{
-        if(y>PH-20){doc.addPage('a4','landscape');y=18;}
-        if(l.c){doc.setFillColor(...hex(l.c));doc.roundedRect(MX,y-3,4,3.6,.6,.6,'F');}
-        doc.text(s,MX+(l.c?8:0),y);y+=5;
-      });
-    });
-  }
-  {const M=calMat(a,b);if(M.mat.length||M.att.length)calPdfMat(doc,M,a,b);}
-  calFooters(doc);
-  const blob=doc.output('blob');
-  const fn=(a+'_Briefing-Calendario_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
-  showPdfPreview('cal-out',URL.createObjectURL(blob),fn,'Calendario del mese in PDF (orizzontale, pronto da stampare o inviare)');
-  calLast={blob,fn,sig:calSig()};
-  uploadPdfToDrive(blob,fn);
-  return true;
-}
-function calSig(){const [a,b]=calRange();return CALX.vista+'|'+BRX.cant+'|'+a+'|'+b+'|'+JSON.stringify(calMineV().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calData().ac)+JSON.stringify(calMat(a,b))+calText();}
 function calFresh(){return calLast&&calLast.sig===calSig();}
 async function calShare(){
   if(!calOk())return;if(!calFresh()&&!calPdf())return;
@@ -3304,32 +3439,7 @@ async function calShare(){
   toast('Condivisione diretta non disponibile: PDF scaricato, allegalo a mail o messaggio');
 }
 function calWa(){if(!calOk())return;window.open('https://wa.me/?text='+encodeURIComponent(calText()),'_blank','noopener,noreferrer');}
-function calMail(){
-  if(!calOk())return;
-  const em=brSelected().map(c=>c.email).filter(Boolean);
-  if(!em.length){toast('Nessun destinatario con email selezionato (tab Briefing > Giornaliero > Destinatari)');return;}
-  if(!calFresh())calPdf();
-  location.href='mailto:'+em.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent('Calendario lavori - '+BRX.cant+' - '+CAL_MESI[CALX.m]+' '+CALX.y)+'&body='+encodeURIComponent((calText()+'\n\n(PDF in allegato)').slice(0,1800));
-  toast('Allega il PDF scaricato alla mail');
-}
-
 // ── GANTT dal calendario + materiali/attrezzature dai briefing ────────────────
-CALX.vista='m';CALX.span=1;
-function calRange(){return CALX.vista==='g'?[brIso(new Date(CALX.y,CALX.m,1)),brIso(new Date(CALX.y,CALX.m+CALX.span,0))]:calMonthRange();}
-function calRangeLbl(){
-  const e=new Date(CALX.y,CALX.m+(CALX.vista==='g'?CALX.span-1:0),1);
-  return CAL_MESI[CALX.m]+' '+CALX.y+(e.getMonth()!==CALX.m?' - '+CAL_MESI[e.getMonth()]+' '+e.getFullYear():'');
-}
-function calVista(v){CALX.vista=v;calRender();}
-function calSpan(n){CALX.span=+n;calRender();}
-function calVistaUI(){
-  const g=CALX.vista==='g';
-  pe('cal-vm').classList.toggle('active',!g);pe('cal-vg').classList.toggle('active',g);
-  pe('cal-span').style.display=g?'':'none';pe('cal-span').value=String(CALX.span);
-  pe('cal-grid').style.display=g?'none':'';pe('cal-gantt').style.display=g?'':'none';
-  ['cal-sel','cal-ed','cal-leg','cal-list','cal-resetbtn'].forEach(id=>{const e=pe(id);if(e)e.style.display=g?'none':'';});
-  pe('cal-title').textContent=g&&CALX.span>1?calRangeLbl():CAL_MESI[CALX.m]+' '+CALX.y;
-}
 function calGanttRows(a,b){
   const m=new Map();
   calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
@@ -3341,7 +3451,7 @@ const calDiff=(a,b)=>Math.round((brPd(b)-brPd(a))/864e5);
 function calGantt(){
   const [a,b]=calRange(),rows=calGanttRows(a,b),n=calDiff(a,b)+1,cw=calWide()?36:26,today=prToday(),k0=brDow(a);
   const el=pe('cal-gantt');
-  if(!rows.length){el.innerHTML=`<div class="pr-alert info" style="margin:6px">Nessuna attività in questo periodo. Compilale nella vista Mese: il Gantt si ricava da lì.</div>`;return;}
+  if(!rows.length){el.innerHTML=`<div class="pr-alert info" style="margin:6px">Nessuna attività in questo periodo. Compilale nella vista Calendario: il Gantt si ricava da lì.</div>`;return;}
   let mh='',dh='';
   for(let i=0;i<n;){const d=brAdd(a,i),dm=brPd(d).getMonth(),left=brIso(new Date(brPd(d).getFullYear(),dm+1,0)),len=Math.min(n-i,calDiff(d,left)+1);
     mh+=`<div class="cal-gm" style="width:${len*cw}px">${CAL_MESI[dm]} ${brPd(d).getFullYear()}</div>`;i+=len;}
@@ -3374,167 +3484,8 @@ function calMatUI(){
   if(M.att.length)h+=`<div class="br-it" style="font-weight:700;background:var(--fill)">Attrezzature mancanti (${M.att.length})</div>`+M.att.map(x=>row(x,true)).join('');
   el.innerHTML=h+`</div>`;
 }
-function calPdfMat(doc,M,a,b){
-  const PW=297,PH=210,MX=10;let y=18;
-  doc.addPage('a4','landscape');
-  const head=t=>{doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text(t,MX,y);y+=7;};
-  const page=()=>{if(y>PH-22){doc.addPage('a4','landscape');y=18;}};
-  head('Materiali e attrezzature da procurare - '+pdfSafe(calRangeLbl()));
-  const tab=(title,cols,rows)=>{
-    if(!rows.length)return;
-    page();doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(60,60,65);doc.text(title,MX,y);y+=5;
-    let x=MX;doc.setFillColor(240,240,243);doc.rect(MX,y-3.6,PW-2*MX,5.6,'F');doc.setFontSize(8.5);doc.setTextColor(90,90,95);
-    cols.forEach(c=>{doc.text(c[0],x+1.5,y);x+=c[1];});y+=5;
-    rows.forEach(r=>{
-      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,35);
-      const cells=r.map((t,i)=>doc.splitTextToSize(pdfSafe(t)||'-',cols[i][1]-3)),h=Math.max(...cells.map(c=>c.length))*4.2+1.8;
-      if(y+h>PH-16){doc.addPage('a4','landscape');y=18;}
-      let xx=MX;cells.forEach((c,i)=>{doc.text(c,xx+1.5,y);xx+=cols[i][1];});
-      doc.setDrawColor(228,228,232);doc.setLineWidth(.15);doc.line(MX,y+h-3.4,PW-MX,y+h-3.4);y+=h;
-    });y+=4;
-  };
-  tab('Materiali da ordinare',[['Materiale',110],['Quantita',35],['Necessario entro',38],['Note',94]],M.mat.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',x.n]));
-  tab('Attrezzature mancanti',[['Attrezzatura',110],['Quantita',35],['Serve entro',38],['Per / priorita',94]],M.att.map(x=>[x.t,x.q,x.e?prFmtD(x.e):'-',[x.p,x.u?'URGENTE':''].filter(Boolean).join(' - ')]));
-}
-function calFooters(doc){
-  const PW=297,PH=210,MX=10,n=doc.getNumberOfPages();
-  for(let i=1;i<=n;i++){
-    doc.setPage(i);doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-12,PW-MX,PH-12);
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(150,150,150);
-    doc.text('Generato da Site Manager - Omnia Solution',MX,PH-7.5);doc.text(`Pag. ${i}/${n}`,PW-MX,PH-7.5,{align:'right'});
-  }
-}
-function calPdfGantt(){
-  if(!BRX.cant){toast('Inserisci il cantiere');return false;}
-  const [a,b]=calRange(),rows=calGanttRows(a,b);
-  if(!rows.length){toast('Nessuna attività nel periodo');return false;}
-  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'});pdfBrand(doc);
-  const PW=297,PH=210,MX=10,LW=58,n=calDiff(a,b)+1,cw=(PW-2*MX-LW)/n,hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-  const rh=7.2,perPage=Math.floor((PH-16-40)/rh);
-  const fit=(s,w)=>{s=pdfSafe(s);if(doc.getTextWidth(s)<=w)return s;while(s.length>1&&doc.getTextWidth(s+'...')>w)s=s.slice(0,-1);return s.trimEnd()+'...';};
-  const first=brMon(a);
-  const pages=Math.ceil(rows.length/perPage);
-  for(let p=0;p<pages;p++){
-    if(p)doc.addPage('a4','landscape');
-    doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(30,30,30);doc.text('Gantt lavori',MX,15);pdfLogo(doc,PW-MX-34,3.5,34);
-    doc.setFont('helvetica','normal');doc.setFontSize(12);doc.setTextColor(80,80,80);doc.text(pdfSafe(BRX.cant)+'  -  '+pdfSafe(calRangeLbl()),MX,21.5);
-    const comp=gv('p-compilatore');doc.setFontSize(9);
-    if(comp)doc.text(pdfSafe('Preparato da: '+comp),PW-MX,15,{align:'right'});
-    doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,21.5,{align:'right'});
-    const top=28,X0=MX+LW,R=rows.slice(p*perPage,(p+1)*perPage),H=top+13+R.length*rh;
-    // intestazione mesi e giorni
-    doc.setFillColor(240,240,243);doc.rect(MX,top,PW-2*MX,13,'F');
-    for(let i=0;i<n;){const d=brAdd(a,i),dm=brPd(d).getMonth(),left=brIso(new Date(brPd(d).getFullYear(),dm+1,0)),len=Math.min(n-i,calDiff(d,left)+1);
-      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(70,70,75);
-      doc.text(pdfSafe(CAL_MESI[dm]+' '+brPd(d).getFullYear()),X0+i*cw+1,top+4.2);
-      doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.line(X0+i*cw,top,X0+i*cw,H);i+=len;}
-    for(let i=0;i<n;i++){const d=brAdd(a,i),dw=brDow(d),x=X0+i*cw;
-      if(dw===6){doc.setFillColor(238,238,241);doc.rect(x,top+13,cw,H-top-13,'F');}
-      const show=cw>=3.1||dw===0||+d.slice(8)===1;
-      if(show){doc.setFont('helvetica','bold');doc.setFontSize(cw>=3.1?6.2:5.5);doc.setTextColor(...(dw===6?[200,40,40]:[60,60,65]));
-        doc.text(String(+d.slice(8)),x+cw/2,top+9,{align:'center'});
-        if(cw>=3.1){doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.text('LMMGVSD'[dw],x+cw/2,top+12,{align:'center'});}}
-    }
-    R.forEach((r,i)=>{
-      const y=top+13+i*rh;
-      doc.setDrawColor(222,222,226);doc.setLineWidth(.15);doc.line(MX,y+rh,PW-MX,y+rh);
-      doc.setFillColor(...hex(r.c));doc.roundedRect(MX+1,y+rh/2-1.7,3.4,3.4,.5,.5,'F');
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(35,35,40);doc.text(fit(r.t,LW-8),MX+6.5,y+rh/2+1.1);
-      r.runs.forEach(([s,e])=>{doc.setFillColor(...hex(r.c));doc.roundedRect(X0+calDiff(a,s)*cw+.15,y+1.4,(calDiff(s,e)+1)*cw-.3,rh-2.8,.7,.7,'F');});
-    });
-    doc.setDrawColor(190,190,195);doc.setLineWidth(.25);doc.rect(MX,top,PW-2*MX,H-top);
-  }
-  const M=calMat(a,b);if(M.mat.length||M.att.length)calPdfMat(doc,M,a,b);
-  calFooters(doc);
-  const blob=doc.output('blob'),fn=(a+'_Briefing-Gantt_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
-  showPdfPreview('cal-out',URL.createObjectURL(blob),fn,'Gantt in PDF (orizzontale, pronto da stampare o inviare)');
-  calLast={blob,fn,sig:calSig()};uploadPdfToDrive(blob,fn);return true;
-}
-function calPdf(){return CALX.vista==='g'?calPdfGantt():calPdfMese();}
-
-// ── Elenco attività per il caposquadra (solo legenda: attività, giorni, operatori, ore, note) ──
-function calListInit(){
-  if(!CALX.ls){const t=prToday(),e=brIso(new Date(+t.slice(0,4),+t.slice(5,7),0));CALX.ls={a:t,b:e>=t?e:brAdd(t,13),past:true};}
-  const A=pe('cl-a'),B=pe('cl-b'),P=pe('cl-p');
-  if(A&&document.activeElement!==A)A.value=CALX.ls.a;if(B&&document.activeElement!==B)B.value=CALX.ls.b;if(P)P.checked=CALX.ls.past;
-}
-function calListSet(){CALX.ls={a:gv('cl-a')||CALX.ls.a,b:gv('cl-b')||CALX.ls.b,past:!!(pe('cl-p')&&pe('cl-p').checked)};}
 const calDM=d=>BR_GS[brDow(d)]+' '+d.slice(8)+'/'+d.slice(5,7);
-function calDaysRange(days){
-  const D=[...days].sort(),out=[];let s=null,p=null;const push=()=>{if(s)out.push(s===p?calDM(s):calDM(s)+' – '+calDM(p));};
-  D.forEach(d=>{if(s&&brAdd(p,1)===d){p=d;return;}push();s=d;p=d;});push();return out.join(', ');
-}
-function calListRows(){
-  calListSet();const L=CALX.ls,today=prToday(),from=L.past&&today>L.a?today:L.a,m=new Map();
-  calMineV().forEach(i=>{if(i.d<from||i.d>L.b)return;const k=calAk(i),e=m.get(k)||{k,t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
-  const rows=[...m.values()].map(e=>{e.days.sort();const mt=calMetaOf(e.k);e.op=(mt.op||'').trim();e.h=(mt.h||'').trim();e.n=(mt.n||'').trim();e.txt=calDaysRange(e.days);return e;});
-  rows.sort((x,y)=>calOrd(x.k)-calOrd(y.k)||x.days[0].localeCompare(y.days[0])||x.t.localeCompare(y.t));
-  return{rows,from,to:L.b};
-}
-function calListText(){
-  const {rows,from,to}=calListRows();
-  const L=['PROGRAMMA ATTIVITA - '+BRX.cant,'Dal '+prFmtD(from)+' al '+prFmtD(to)];
-  const comp=gv('p-compilatore');if(comp)L.push('Preparato da: '+comp);L.push('');
-  rows.forEach((e,i)=>L.push((i+1)+'. '+e.t+': '+e.txt+(e.op?' - '+e.op+' operatori':'')+(e.h?' - '+e.h+' ore':'')+(e.n?' ('+e.n+')':'')));
-  return L.join('\n');
-}
-function calListOk(){
-  if(!BRX.cant){toast('Inserisci il cantiere');return null;}
-  const r=calListRows();if(!r.rows.length){toast('Nessuna attività visibile nel periodo scelto');return null;}
-  if(r.to<r.from){toast('La data finale precede la data iniziale');return null;}
-  return r;
-}
-let calListLast=null;
-function calListPdf(){
-  const r=calListOk();if(!r)return false;
-  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});pdfBrand(doc);
-  const PW=210,PH=297,MX=12,CW=PW-2*MX,rows=r.rows,hasN=rows.some(e=>e.n),hasM=rows.some(e=>e.op||e.h);
-  const wO=hasM?15:0,wH=hasM?15:0,wN=hasN?46:0,wA=50,wG=CW-6-wA-wO-wH-wN;
-  const x0=MX,xA=MX+6,xG=xA+wA,xO=xG+wG,xH=xO+wO,xN=xH+wH;
-  const fit=(t,w)=>doc.splitTextToSize(pdfSafe(t||''),w);
-  const head=(first)=>{
-    let y;
-    if(first){
-      doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(30,30,30);doc.text('Programma attivita',MX,18);pdfLogo(doc,PW-MX-34,6,34);
-      doc.setFont('helvetica','normal');doc.setFontSize(11.5);doc.setTextColor(80,80,80);doc.text(pdfSafe(BRX.cant),MX,25);
-      doc.setFontSize(10.5);doc.text('Dal '+prFmtD(r.from)+' al '+prFmtD(r.to),MX,31);
-      const comp=gv('p-compilatore');doc.setFontSize(9);if(comp)doc.text(pdfSafe('Preparato da: '+comp),PW-MX,25,{align:'right'});
-      doc.text('Emesso il '+new Date().toLocaleDateString('it-IT'),PW-MX,31,{align:'right'});y=38;
-    }else y=20;
-    doc.setFillColor(240,240,243);doc.rect(MX,y,CW,6.5,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(90,90,95);
-    doc.text('ATTIVITA',xA,y+4.4);doc.text('GIORNI',xG,y+4.4);if(hasM){doc.text('OPER.',xO,y+4.4);doc.text('ORE',xH,y+4.4);}if(hasN)doc.text('NOTE',xN,y+4.4);
-    return y+6.5;
-  };
-  let y=head(true);
-  const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-  rows.forEach(e=>{
-    doc.setFont('helvetica','bold');doc.setFontSize(10);const la=fit(e.t,wA-2);
-    doc.setFont('helvetica','normal');doc.setFontSize(9.5);const lg=fit(e.txt,wG-2),ln=hasN?fit(e.n,wN-2):[];
-    const h=Math.max(la.length*4.6,lg.length*4.4,ln.length*4.2,5)+4;
-    if(y+h>PH-18){doc.addPage();y=head(false);}
-    doc.setFillColor(...hex(e.c));doc.roundedRect(x0,y+2.2,4,4,.7,.7,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);la.forEach((t,i)=>doc.text(t,xA,y+5.6+i*4.6));
-    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(45,45,50);lg.forEach((t,i)=>doc.text(t,xG,y+5.6+i*4.4));
-    if(hasM){doc.text(pdfSafe(e.op||'-'),xO,y+5.6);doc.text(pdfSafe(e.h||'-'),xH,y+5.6);}
-    doc.setFontSize(9);ln.forEach((t,i)=>doc.text(t,xN,y+5.6+i*4.2));
-    doc.setDrawColor(215,215,220);doc.setLineWidth(.2);doc.line(MX,y+h,PW-MX,y+h);y+=h;
-  });
-  const n=doc.getNumberOfPages();
-  for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor(225,225,225);doc.setLineWidth(.2);doc.line(MX,PH-14,PW-MX,PH-14);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text('Generato da Site Manager - Omnia Solution',MX,PH-9.5);doc.text('Pag. '+i+'/'+n,PW-MX,PH-9.5,{align:'right'});}
-  const blob=doc.output('blob');
-  const fn=(r.from+'_Programma-Attivita_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
-  showPdfPreview('cl-out',URL.createObjectURL(blob),fn,'Elenco attivita in PDF (verticale, pronto da stampare o inviare)');
-  calListLast={blob,fn,txt:calListText()};uploadPdfToDrive(blob,fn);return true;
-}
-async function calListShare(){
-  if(!calListPdf())return;
-  const f=new File([calListLast.blob],calListLast.fn,{type:'application/pdf'});
-  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:calListLast.fn.replace('.pdf',''),text:calListLast.txt});return;}}
-  catch(e){if(e&&e.name==='AbortError')return;}
-  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=calListLast.fn;document.body.appendChild(a);a.click();a.remove();
-  toast('Condivisione diretta non disponibile: PDF scaricato, allegalo a mail o messaggio');
-}
-function calListWa(){if(!calListOk())return;window.open('https://wa.me/?text='+encodeURIComponent(calListText()),'_blank','noopener,noreferrer');}
+let calRz=null;window.addEventListener('resize',()=>{clearTimeout(calRz);calRz=setTimeout(()=>{const p=pe('pane-calendario');if(p&&p.classList.contains('active')){calGrid();calGantt();}},150);});
 
 // ── RFI (richieste di informazioni) + barra "Controlli" ───────────────────────
 // PR.rfi = [{id,ck,cant,n,d,og,a,sc,st:'a'|'r'|'c',dr,no,u}]   a=aperta r=risposta ricevuta c=chiusa
