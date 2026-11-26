@@ -2491,7 +2491,7 @@ function prSanitize(s){
   ['records','imprese','rub','rfi'].forEach(k=>{o[k]=arr(s[k]).filter(ok);});
   o.delImp=arr(s.delImp).filter(x=>typeof x==='string'&&PR_IDOK.test(x));
   const c=s.cal||{};o.cal={it:arr(c.it).filter(ok),nt:(c.nt&&typeof c.nt==='object')?c.nt:{},ac:{}};
-  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};});
+  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;});
   o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
     ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(!l)return;if(!PR_IDOK.test(l.id||''))l.id=brUid();if(l.img){l.img=arr(l.img).filter(m=>m&&typeof m.d==='string'&&m.d.startsWith('data:image/jpeg;base64,')).slice(0,3).map(m=>({id:PR_IDOK.test(m.id||'')?m.id:brUid(),d:m.d,cap:String(m.cap||'').slice(0,120)}));if(!l.img.length)delete l.img;}});}});});
@@ -2921,6 +2921,7 @@ const calFg=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;ret
 const calAk=i=>i.t.trim().toLowerCase()+'|'+i.c;
 function calData(){if(!PR.cal||!PR.cal.it)PR.cal={it:[],nt:{},ac:{}};if(!PR.cal.nt)PR.cal.nt={};if(!PR.cal.ac)PR.cal.ac={};return PR.cal;}
 function calMetaOf(k){return calData().ac[calCk()+'|'+k]||{op:'',h:''};}
+const calOrd=k=>{const o=calMetaOf(k).o;return o===undefined?1e9:o;};
 function calMetaSet(i,f,v){const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};m[f]=String(v).slice(0,20);m.u=Date.now();C.ac[kk]=m;prSave();}
 function calMine(){const ck=calCk(),C=calData();return C.it.filter(i=>i.ck===ck);}
 function calByDay(){const m={};calMine().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>a.u-b.u||(a.id<b.id?-1:1)));return m;}
@@ -2985,7 +2986,7 @@ function calActs(){
   calMine().forEach(i=>{const k=calAk(i),a=m.get(k)||{k,t:i.t,c:i.c,ids:[],mese:0,f0:i.d,fm:''};a.ids.push(i.id);
     if(i.d<a.f0)a.f0=i.d;
     if(i.d.slice(0,7)===ym){a.mese++;if(!a.fm||i.d<a.fm)a.fm=i.d;}m.set(k,a);});
-  return [...m.values()].sort((a,b)=>(!a.fm)-(!b.fm)||(a.fm||a.f0).localeCompare(b.fm||b.f0)||a.t.localeCompare(b.t));
+  return [...m.values()].sort((a,b)=>calOrd(a.k)-calOrd(b.k)||(!a.fm)-(!b.fm)||(a.fm||a.f0).localeCompare(b.fm||b.f0)||a.t.localeCompare(b.t));
 }
 function calLeg(){
   const all=calActs();CALX.acts=all;
@@ -2996,8 +2997,21 @@ function calLeg(){
     <span class="cal-dot" style="background:${a.c}"></span>
     <div style="flex:1;min-width:0"><b>${esc(a.t)}</b><div style="font-size:12px;color:var(--label2)">${a.fm?'dal '+prFmtD(a.fm)+' · ':''}${a.mese} gg in questo mese · ${a.ids.length} in totale</div>
       <div style="display:flex;gap:8px;margin-top:6px"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Operatori" value="${esc(calMetaOf(a.k).op)}" oninput="calMetaSet(${i},'op',this.value)"><input class="br-in" style="flex:1;min-width:0" inputmode="decimal" placeholder="Ore" value="${esc(calMetaOf(a.k).h)}" oninput="calMetaSet(${i},'h',this.value)"></div></div>
+    <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
     <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
-    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div>`).join('')+`</div>`;
+    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere.</div>`)+`</div>`;
+}
+function calMoveAct(i,d){
+  const A=CALX.acts,j=i+d;if(!A[i]||!A[j])return;
+  const C=calData(),ck=calCk(),now=Date.now(),ord=A.map(a=>a.k);
+  [ord[i],ord[j]]=[ord[j],ord[i]];
+  ord.forEach((k,n)=>{const kk=ck+'|'+k,m=C.ac[kk]||{op:'',h:''};if(m.o!==n){m.o=n;m.u=now;}C.ac[kk]=m;});
+  prSave();calLeg();
+}
+function calOrdReset(){
+  const C=calData(),ck=calCk(),now=Date.now();
+  Object.keys(C.ac).forEach(k=>{if(k.startsWith(ck+'|')&&C.ac[k].o!==undefined){delete C.ac[k].o;C.ac[k].u=now;}});
+  prSave();calLeg();
 }
 function calSelDays(){return [...CALX.sel].sort();}
 function calSelUI(){
@@ -3169,7 +3183,7 @@ function calPdfMese(){
   // legenda (attività con almeno un giorno nel mese)
   const leg=new Map();
   calMine().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=leg.get(k)||{k,t:i.t,c:i.c,n:0,f:i.d};e.n++;if(i.d<e.f)e.f=i.d;leg.set(k,e);});
-  const L=[...leg.values()].sort((x,y)=>x.f.localeCompare(y.f)||x.t.localeCompare(y.t));
+  const L=[...leg.values()].sort((x,y)=>calOrd(x.k)-calOrd(y.k)||x.f.localeCompare(y.f)||x.t.localeCompare(y.t));
   L.forEach(e=>{const m=calMetaOf(e.k);e.op=(m.op||'').trim();e.h=(m.h||'').trim();});
   const hasMeta=L.some(e=>e.op||e.h);
   const LC=hasMeta?2:3,LW=(PW-2*MX)/LC,legMax=Math.min(L.length,12),legH=legMax?Math.ceil(legMax/LC)*5.2+4:0;
