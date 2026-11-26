@@ -449,8 +449,10 @@ textarea.br-in{resize:vertical;min-height:44px}
   </div>
   <div id="br-body"></div>
   <div id="br-dest"></div>
+  <div id="br-saved-wrap">
   <div class="sec-lbl">Briefing salvati - riapri</div>
   <div class="card" id="br-saved"></div>
+  </div>
   <div id="cal-wrap" style="display:none">
     <div class="pr-alert warn" id="cal-msg" style="display:none">Inserisci il nome del cantiere qui sopra: ogni cantiere ha il suo calendario.</div>
     <div class="card" id="cal-main" style="padding:10px 8px">
@@ -2934,6 +2936,9 @@ function calMode(on){
   ['br-data-row','br-body','br-dest','br-btns','br-info'].forEach(id=>sh(id,!on));
   if(on){const o=pe('br-out');if(o)o.style.display='none';}
   const pn=pe('pane-briefing');if(pn)pn.classList.toggle('cal-on',on);
+  // elenco "Briefing salvati": in fondo alla pagina nella vista calendario, sopra il calendario altrimenti
+  const w=pe('br-saved-wrap'),cw=pe('cal-wrap');
+  if(w&&pn&&cw){if(on)pn.appendChild(w);else if(w.nextElementSibling!==cw)pn.insertBefore(w,cw);}
 }
 const calWide=()=>window.innerWidth>=900;
 let calRz=null;window.addEventListener('resize',()=>{clearTimeout(calRz);calRz=setTimeout(()=>{if(BRX.tipo==='m'&&pe('cal-wrap')&&pe('cal-wrap').style.display!=='none'){calGrid();calGantt();}},150);});
