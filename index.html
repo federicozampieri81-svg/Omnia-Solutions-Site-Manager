@@ -3058,18 +3058,36 @@ function calActs(){
 }
 function calLeg(){
   const all=calActs();CALX.acts=all;
-  const el=pe('cal-leg');
+  const el=pe('cal-leg'),idx=new Map(all.map((a,i)=>[a.k,i]));
   pe('cal-dl').innerHTML=[...new Set(all.map(a=>a.t))].map(t=>`<option value="${esc(t)}">`).join('');
   if(!all.length){el.innerHTML='';return;}
   const open=el.querySelector('details')&&el.querySelector('details').open;
-  el.innerHTML=`<details${open?' open':''} class="card" style="padding:0"><summary style="padding:12px 14px;cursor:pointer;font-weight:700">Gestisci attività (nascondi, ordina, modifica, elimina)</summary>`+all.map((a,i)=>`<div class="br-it" style="display:flex;gap:10px;align-items:center">
-    <span class="cal-dot" style="background:${a.c};${calHid(a.k)?'opacity:.3':''}"></span>
-    <div style="flex:1;min-width:0;${calHid(a.k)?'opacity:.5':''}"><b>${esc(a.t)}</b>${calHid(a.k)?' <span style="font-size:12px;color:var(--label2)">(nascosta)</span>':''}<div style="font-size:14px;font-weight:600;color:var(--label);margin-top:2px">${(()=>{const d=calDaysTxt(a.days);return (d.txt?esc(d.txt):'<span style="font-weight:400;color:var(--label2)">nessun giorno nel periodo</span>')+(d.rest?` <span style="font-weight:400;font-size:12px;color:var(--label2)">(+${d.rest} fuori periodo)</span>`:'');})()}</div><div style="font-size:12px;color:var(--label2)">${a.mese} gg nel periodo · ${a.ids.length} in totale</div></div>
-    <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end"><button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${calHid(a.k)?'Mostra':'Nascondi'}</button>
-    <button class="br-x" style="color:var(--blue);${calFin(a.k)?'font-weight:700':''}" onclick="calFinTog(${i})">${calFin(a.k)?'✓ Sempre ultima':'Sempre ultima'}</button>
-    <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
-    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere; "Sempre ultima" la tiene in fondo ogni giorno, nel Gantt e nei PDF. Le attività nascoste non compaiono nel programma e nei PDF.</div>`)+`</details>`;
+  const [pa,pb]=calPer(),byD={},inP=new Set();
+  calMine().forEach(i=>{if(i.d<pa||i.d>pb)return;const k=calAk(i);(byD[i.d]=byD[i.d]||new Set()).add(k);inP.add(k);});
+  const row=(i,dayKs)=>{
+    const a=all[i],hid=calHid(a.k);let up=-1,dn=-1;
+    if(dayKs){const p=dayKs.indexOf(i);up=p>0?dayKs[p-1]:-1;dn=p<dayKs.length-1?dayKs[p+1]:-1;}
+    const ar=(j,sym,lbl)=>`<button class="br-x" style="color:var(--blue);padding:2px 10px;${j<0?'opacity:.3':''}" aria-label="${lbl}" onclick="calSwapAct(${i},${j})">${sym}</button>`;
+    return `<div class="cp-it"><div class="cp-t"><span class="cal-dot" style="background:${a.c};${hid?'opacity:.3':''}"></span><b style="${hid?'opacity:.5':''}">${esc(a.t)}</b>${hid?'<span style="font-size:12px;color:var(--label2)">nascosta</span>':''}${calFin(a.k)?'<span style="font-size:12px;color:var(--label2)">sempre ultima</span>':''}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:2px 4px;margin-top:2px">${dayKs?ar(up,'▲','Sposta su')+ar(dn,'▼','Sposta giù'):''}<button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${hid?'Mostra':'Nascondi'}</button><button class="br-x" style="color:var(--blue);${calFin(a.k)?'font-weight:700':''}" onclick="calFinTog(${i})">${calFin(a.k)?'✓ Sempre ultima':'Sempre ultima'}</button><button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button><button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`;
+  };
+  let body='';
+  for(let d=pa;d<=pb;d=brAdd(d,1)){
+    if(!byD[d])continue;
+    const ix=[...byD[d]].map(k=>idx.get(k)).filter(i=>i!==undefined).sort((x,y)=>x-y);
+    body+=`<div class="cp-day"><div class="cp-d"><b>${d.slice(8)}/${d.slice(5,7)}</b><span>${BR_GS[brDow(d)]}</span></div><div class="cp-its">${ix.map(i=>row(i,ix)).join('')}</div></div>`;
+  }
+  const rest=all.map((a,i)=>i).filter(i=>!inP.has(all[i].k));
+  if(rest.length)body+=`<div class="cp-day"><div class="cp-d"><b style="font-size:15px">Altri</b><span>fuori periodo</span></div><div class="cp-its">${rest.map(i=>row(i,null)).join('')}</div></div>`;
+  el.innerHTML=`<details${open?' open':''} class="card" style="padding:0"><summary style="padding:12px 14px;cursor:pointer;font-weight:700">Gestisci attività (per giorno)</summary>
+    <div class="br-it" style="font-size:13px;color:var(--label2)">Nascondi, Sempre ultima, Modifica ed Elimina valgono per l'attività in <b>tutti</b> i suoi giorni. ▲ ▼ cambiano l'ordine rispetto alle altre attività dello stesso giorno. Le attività nascoste non compaiono nel programma e nei PDF.</div>${body}`+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:'')+`</details>`;
+}
+function calSwapAct(i,j){
+  const A=CALX.acts;if(j<0||!A[i]||!A[j])return;
+  const C=calData(),ck=calCk(),now=Date.now(),ord=A.map(a=>a.k);
+  [ord[i],ord[j]]=[ord[j],ord[i]];
+  ord.forEach((k,n)=>{const kk=ck+'|'+k,m=C.ac[kk]||{op:'',h:''};if(m.o!==n){m.o=n;m.u=now;}C.ac[kk]=m;});
+  prSave();calRender();
 }
 function calDaysTxt(days){
   const inM=days.filter(calInP).sort(),out=[],f=d=>BR_GS[brDow(d)]+' '+(+d.slice(8))+'/'+d.slice(5,7);let s=null,p=null;
