@@ -69,6 +69,9 @@ body::before{content:"";position:fixed;inset:0;z-index:120;pointer-events:none;b
 .drv-dot.ok{background:var(--green)}
 .drv-dot.saving{background:var(--orange);animation:pulse 1s infinite}
 .drv-dot.error{background:var(--red)}
+.sv-pill{position:fixed;right:10px;bottom:10px;z-index:400;display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:20px;border:.5px solid var(--sep);background:var(--card);color:var(--label);font:600 12px/1 inherit;font-family:inherit;box-shadow:0 2px 10px rgba(0,0,0,.14);cursor:pointer}
+.sv-pill i{width:11px;height:11px;border-radius:50%;background:var(--sep);flex:none}
+.sv-pill.ok i{background:var(--green)}.sv-pill.saving i{background:var(--orange);animation:pulse 1s infinite}.sv-pill.error i{background:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .tabs{position:sticky;top:52px;z-index:150;background:rgba(243,241,238,.88);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border-bottom:.5px solid var(--sep);display:flex;overflow-x:auto;scrollbar-width:none;padding:0 2px}
 .tabs::-webkit-scrollbar{display:none}
@@ -307,6 +310,8 @@ textarea.br-in{resize:vertical;min-height:44px}
     </div>
   </div>
 </div>
+
+<button class="sv-pill" id="sv-pill" onclick="svTap()"><i></i><span>...</span></button>
 
 <div class="tabs" id="tabbar">
   <div class="tab active" data-p="giornaliera" onclick="showPane('giornaliera')">
@@ -906,7 +911,7 @@ const SP_SEZIONI=[
 
 let spScores={}, currentRepType='giornaliero', driveHistory=[];
 let photos={giornaliera:[],settimanale:[],quindicinale:[],mensile:[],sopralluogo:[]};
-let gAccessToken=null, gTokenClient=null, gUserEmail=null;
+let gAccessToken=null, gTokenClient=null, gUserEmail=null, gExp=0;
 const FOLDER_ID='15rmrsVeli486LLDi9ophwtl01hsAGv7n';
 const FOLDER_URL='https://drive.google.com/drive/folders/15rmrsVeli486LLDi9ophwtl01hsAGv7n';
 const GOOGLE_CLIENT_ID='44607154812-mgo2qc8830s89dkkhjobmlb3g67mst34.apps.googleusercontent.com';
@@ -932,7 +937,7 @@ function initGoogleAuth(){
       scope:DRIVE_SCOPE,
       callback:(resp)=>{
         if(resp.error){setDriveStatus('error','accesso negato');toast('Accesso Google negato');return;}
-        gAccessToken=resp.access_token;
+        gAccessToken=resp.access_token;gExp=Date.now()+3500*1000;
         sessionStorage.setItem('gToken',JSON.stringify({token:resp.access_token,exp:Date.now()+3500*1000}));
         onSignedIn();
       }
@@ -941,7 +946,7 @@ function initGoogleAuth(){
     // Try restoring a still-valid token from this session
     try{
       const saved=JSON.parse(sessionStorage.getItem('gToken')||'null');
-      if(saved&&saved.exp>Date.now()){gAccessToken=saved.token;onSignedIn();}
+      if(saved&&saved.exp>Date.now()){gAccessToken=saved.token;gExp=saved.exp;onSignedIn();}
     }catch(e){}
   },200);
 }
@@ -986,7 +991,7 @@ function signOutGoogle(){
   if(gAccessToken){
     google.accounts.oauth2.revoke(gAccessToken,()=>{});
   }
-  gAccessToken=null;prBk.pulled=false;prBkRender();
+  gAccessToken=null;gExp=0;prBk.pulled=false;prBkRender();
   sessionStorage.removeItem('gToken');
   setDriveStatus('','disconnesso');
   const banner=document.getElementById('auth-banner');
@@ -1567,9 +1572,33 @@ function genReport(){
 
 function copyRep(){toast('Il report viene generato direttamente in PDF — usa Genera');}
 
+// Semaforo di salvataggio (pallino in basso a destra, visibile in tutte le pagine)
+function svState(){
+  if(typeof prBk==='undefined')return['saving','Avvio...','Avvio'];
+  if(prBk.err)return['error','Non salvato','Salvataggio su Drive non riuscito: tocca per riprovare'];
+  if(!gAccessToken)return['error','Solo su questo dispositivo','I dati sono solo in questo browser: tocca per collegare Google Drive'];
+  if(gExp&&Date.now()>gExp)return['error','Sessione Drive scaduta','La sessione Google è scaduta: tocca per riconnettere'];
+  if(!prBk.pulled||prBk.busy||prBk.driveVer!==prBk.ver)return['saving','Salvo...','Salvataggio su Drive in corso'];
+  const t=prBk.last?' '+prBk.last.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
+  return['ok','Salvato'+t,'Tutto salvato su Drive'+t];
+}
+function svRender(){
+  const el=document.getElementById('sv-pill');if(!el)return;
+  const [st,txt,tip]=svState();
+  el.className='sv-pill '+st;el.title=tip;el.setAttribute('aria-label',tip);
+  el.querySelector('span').textContent=txt;
+}
+function svTap(){
+  const [st,,tip]=svState();toast(tip);
+  if(st!=='error')return;
+  if(!gAccessToken||(gExp&&Date.now()>gExp)){if(gTokenClient)gTokenClient.requestAccessToken({prompt:''});else toast('Google non ancora caricato, riprova');}
+  else if(typeof prBkRetry==='function')prBkRetry();
+}
+setInterval(()=>{try{svRender();}catch(e){}},3000);
 function setDriveStatus(state,text){
   const dot=document.getElementById('drv-dot'),lbl=document.getElementById('drv-txt');
   if(dot)dot.className='drv-dot '+state;if(lbl)lbl.textContent=text;
+  if(typeof svRender==='function')svRender();
 }
 
 // ── PDF BUILDER (jsPDF) ───────────────────────────────────────────────────────
@@ -2618,6 +2647,7 @@ function prPushNow(){prPushSafe();}
 function prBkTouch(){prBk.ver++;prBkRender();clearTimeout(prBk.timer);prBk.timer=setTimeout(prPushSafe,2500);}
 function prBkRetry(){if(prBk.pulled)prPushSafe();else prDriveSync();}
 function prBkRender(){
+  svRender();
   const el=document.getElementById('pr-backup');if(!el)return;
   const has=PR.records.length||PR.imprese.length;
   const box=(cls,html)=>{el.innerHTML=`<div class="pr-alert ${cls}">${html}</div>`;};
