@@ -2948,6 +2948,7 @@ function brWa(){
 // ── CALENDARIO (tab Calendario: periodo, programma per giorno, PDF) ───────────────────────────────
 // PR.cal = { it:[{id,ck,d,t,c,u,s?,op?,h?,n?}], nt:{'ck|YYYY-MM-DD':{t,u}} }  (un'attività per giorno; i giorni sono voci separate)
 const CAL_COL=['#E53935','#1E88E5','#43A047','#FB8C00','#8E24AA','#00ACC1','#FDD835','#6D4C41','#EC407A','#757575'];
+const CAL_ME='#39FF14'; // verde fluo: attività svolte da me (non proposto in automatico)
 const CAL_MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const CALX={y:0,m:0,sel:new Set(),color:CAL_COL[0],edit:null,anchor:null,acts:[],pa:'',pb:'',vista:'m'};
 let calDrag=null, calLast=null;
@@ -3276,7 +3277,7 @@ function calFooters(doc,P){
 
 const calWide=()=>window.innerWidth>=900;
 function calPal(){
-  pe('cal-pal').innerHTML=CAL_COL.map(c=>`<button class="cal-sw${c===CALX.color?' on':''}" style="background:${c}" aria-label="Colore" onclick="calPick('${c}')"></button>`).join('');
+  pe('cal-pal').innerHTML=CAL_COL.map(c=>`<button class="cal-sw${c===CALX.color?' on':''}" style="background:${c}" aria-label="Colore" onclick="calPick('${c}')"></button>`).join('')+`<button class="cal-sw${CAL_ME===CALX.color?' on':''}" style="background:${CAL_ME};width:auto;min-width:34px;padding:0 10px;border-radius:17px;font-size:12px;font-weight:700;color:#1c1c1e" aria-label="Colore delle mie attività" onclick="calPick('${CAL_ME}')">Io</button>`;
 }
 function calPick(c){CALX.color=c;calPal();}
 function calTxtIn(){
