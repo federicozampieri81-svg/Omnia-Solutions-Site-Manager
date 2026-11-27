@@ -2516,7 +2516,7 @@ function prSanitize(s){
   ['records','imprese','rub','rfi'].forEach(k=>{o[k]=arr(s[k]).filter(ok);});
   o.delImp=arr(s.delImp).filter(x=>typeof x==='string'&&PR_IDOK.test(x));
   const c=s.cal||{};o.cal={it:arr(c.it).filter(ok).map(i=>{['op','h'].forEach(f=>{if(i[f]!==undefined)i[f]=String(i[f]).slice(0,20);});if(i.n!==undefined)i.n=String(i.n).slice(0,160);return i;}),nt:(c.nt&&typeof c.nt==='object')?c.nt:{},ac:{}};
-  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;if(v.hid)o.cal.ac[k].hid=1;if(v.n)o.cal.ac[k].n=String(v.n).slice(0,160);});
+  if(c.ac&&typeof c.ac==='object')Object.keys(c.ac).forEach(k=>{const v=c.ac[k];if(v&&typeof v==='object')o.cal.ac[k]={op:String(v.op||'').slice(0,20),h:String(v.h||'').slice(0,20),u:+v.u||0};if(v.o!==undefined&&isFinite(+v.o))o.cal.ac[k].o=+v.o;if(v.hid)o.cal.ac[k].hid=1;if(v.fin)o.cal.ac[k].fin=1;if(v.n)o.cal.ac[k].n=String(v.n).slice(0,160);});
   o.briefs={};Object.keys(s.briefs||{}).forEach(k=>{
     const b=s.briefs[k];if(!b||typeof b!=='object')return;
     ['sq','att','mat'].forEach(a=>{b[a]=arr(b[a]);b[a].forEach(x=>{if(!x||typeof x!=='object')return;if(!PR_IDOK.test(x.id||''))x.id=brUid();if(a==='sq'){x.lav=arr(x.lav);x.lav.forEach(l=>{if(!l)return;if(!PR_IDOK.test(l.id||''))l.id=brUid();if(l.img){l.img=arr(l.img).filter(m=>m&&typeof m.d==='string'&&m.d.startsWith('data:image/jpeg;base64,')).slice(0,3).map(m=>({id:PR_IDOK.test(m.id||'')?m.id:brUid(),d:m.d,cap:String(m.cap||'').slice(0,120)}));if(!l.img.length)delete l.img;}});}});});
@@ -2956,12 +2956,13 @@ const calFg=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;ret
 const calAk=i=>i.t.trim().toLowerCase()+'|'+i.c;
 function calData(){if(!PR.cal||!PR.cal.it)PR.cal={it:[],nt:{},ac:{}};if(!PR.cal.nt)PR.cal.nt={};if(!PR.cal.ac)PR.cal.ac={};return PR.cal;}
 function calMetaOf(k){return calData().ac[calCk()+'|'+k]||{op:'',h:''};}
-const calOrd=k=>{const o=calMetaOf(k).o;return o===undefined?1e9:o;};
+const calFin=k=>!!calMetaOf(k).fin;
+const calOrd=k=>{const m=calMetaOf(k);return m.fin?2e9:(m.o===undefined?1e9:m.o);};
 function calMetaSet(i,f,v){const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};m[f]=String(v).slice(0,f==='n'?160:20);m.u=Date.now();C.ac[kk]=m;prSave();}
 function calMine(){const ck=calCk(),C=calData();return C.it.filter(i=>i.ck===ck);}
 const calHid=k=>!!calMetaOf(k).hid;
 function calMineV(){return calMine().filter(i=>!calHid(calAk(i)));}
-function calByDay(){const m={};calMineV().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>(a.s||a.u)-(b.s||b.u)||(a.id<b.id?-1:1)));return m;}
+function calByDay(){const m={};calMineV().forEach(i=>{(m[i.d]=m[i.d]||[]).push(i);});Object.keys(m).forEach(d=>m[d].sort((a,b)=>(calFin(calAk(a))-calFin(calAk(b)))||(a.s||a.u)-(b.s||b.u)||(a.id<b.id?-1:1)));return m;}
 function calKill(ids){
   if(!ids.length)return;
   const C=calData(),s=new Set(ids);
@@ -3035,8 +3036,9 @@ function calLeg(){
     <div style="flex:1;min-width:0;${calHid(a.k)?'opacity:.5':''}"><b>${esc(a.t)}</b>${calHid(a.k)?' <span style="font-size:12px;color:var(--label2)">(nascosta)</span>':''}<div style="font-size:14px;font-weight:600;color:var(--label);margin-top:2px">${(()=>{const d=calDaysTxt(a.days);return (d.txt?esc(d.txt):'<span style="font-weight:400;color:var(--label2)">nessun giorno nel periodo</span>')+(d.rest?` <span style="font-weight:400;font-size:12px;color:var(--label2)">(+${d.rest} fuori periodo)</span>`:'');})()}</div><div style="font-size:12px;color:var(--label2)">${a.mese} gg nel periodo · ${a.ids.length} in totale</div></div>
     <div style="display:flex;flex-direction:column;gap:2px"><button class="br-x" style="color:var(--blue);padding:2px 8px;${i?'':'opacity:.3'}" aria-label="Sposta su" onclick="calMoveAct(${i},-1)">▲</button><button class="br-x" style="color:var(--blue);padding:2px 8px;${i<all.length-1?'':'opacity:.3'}" aria-label="Sposta giù" onclick="calMoveAct(${i},1)">▼</button></div>
     <div style="display:flex;flex-direction:column;align-items:flex-end"><button class="br-x" style="color:var(--blue)" onclick="calHidTog(${i})">${calHid(a.k)?'Mostra':'Nascondi'}</button>
+    <button class="br-x" style="color:var(--blue);${calFin(a.k)?'font-weight:700':''}" onclick="calFinTog(${i})">${calFin(a.k)?'✓ Sempre ultima':'Sempre ultima'}</button>
     <button class="br-x" style="color:var(--blue)" onclick="calEditAct(${i})">Modifica</button>
-    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere. Le attività nascoste non compaiono nel programma e nei PDF.</div>`)+`</details>`;
+    <button class="br-x" onclick="calDelAct(${i})">Elimina</button></div></div>`).join('')+(all.some(a=>calMetaOf(a.k).o!==undefined)?`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine scelto da te. <button class="br-x" style="color:var(--blue)" onclick="calOrdReset()">Ripristina ordine cronologico</button></div>`:`<div class="br-it" style="font-size:13px;color:var(--label2)">Ordine cronologico. Usa ▲ ▼ per ordinare a tuo piacere; "Sempre ultima" la tiene in fondo ogni giorno, nel Gantt e nei PDF. Le attività nascoste non compaiono nel programma e nei PDF.</div>`)+`</details>`;
 }
 function calDaysTxt(days){
   const inM=days.filter(calInP).sort(),out=[],f=d=>BR_GS[brDow(d)]+' '+(+d.slice(8))+'/'+d.slice(5,7);let s=null,p=null;
@@ -3287,6 +3289,10 @@ function calHidTog(i){
   const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};
   if(m.hid)delete m.hid;else m.hid=1;m.u=Date.now();C.ac[kk]=m;prSave();calRender();
 }
+function calFinTog(i){
+  const a=CALX.acts[i];if(!a)return;const C=calData(),kk=calCk()+'|'+a.k,m=C.ac[kk]||{op:'',h:''};
+  if(m.fin)delete m.fin;else m.fin=1;m.u=Date.now();C.ac[kk]=m;prSave();calRender();
+}
 function calMoveAct(i,d){
   const A=CALX.acts,j=i+d;if(!A[i]||!A[j])return;
   const C=calData(),ck=calCk(),now=Date.now(),ord=A.map(a=>a.k);
@@ -3445,7 +3451,7 @@ function calGanttRows(a,b){
   calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
   return [...m.values()].map(e=>{e.days.sort();e.runs=[];let s=e.days[0],p=s;
     for(let n=1;n<=e.days.length;n++){const d=e.days[n];if(d&&d===brAdd(p,1)){p=d;continue;}e.runs.push([s,p]);s=d;p=d;}
-    return e;}).sort((x,y)=>x.days[0]<y.days[0]?-1:x.days[0]>y.days[0]?1:x.t.localeCompare(y.t));
+    return e;}).sort((x,y)=>(calFin(calAk(x))-calFin(calAk(y)))||(x.days[0]<y.days[0]?-1:x.days[0]>y.days[0]?1:x.t.localeCompare(y.t)));
 }
 const calDiff=(a,b)=>Math.round((brPd(b)-brPd(a))/864e5);
 function calGantt(){
