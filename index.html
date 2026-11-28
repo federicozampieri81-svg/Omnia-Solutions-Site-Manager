@@ -516,6 +516,7 @@ textarea.br-in{resize:vertical;min-height:44px}
     <div class="card" style="padding:12px 14px">
       <div class="form-row"><div class="form-lbl">Contenuto</div><select class="form-inp" id="cal-pm" style="max-width:260px"><option value="l">Solo elenco attività</option><option value="c">Solo calendario</option><option value="g">Solo Gantt</option><option value="cl" selected>Calendario + elenco sotto</option><option value="gl">Gantt + elenco sotto</option></select></div>
       <div class="form-row"><div class="form-lbl">Pagina</div><select class="form-inp" id="cal-po" style="max-width:260px"><option value="p">Verticale</option><option value="l">Orizzontale</option></select></div>
+      <div id="cal-ex"></div>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px"><input type="checkbox" id="cal-pmat" checked style="width:18px;height:18px"> Aggiungi materiali e attrezzature dai briefing</label>
       <div class="btn-row" style="margin-top:12px">
         <button class="btn btn-blue" onclick="calPdf()">Genera PDF</button>
@@ -2980,7 +2981,7 @@ function brWa(){
 const CAL_COL=['#E53935','#1E88E5','#43A047','#FB8C00','#8E24AA','#00ACC1','#FDD835','#6D4C41','#EC407A','#757575'];
 const CAL_ME='#39FF14'; // verde fluo: attività svolte da me (non proposto in automatico)
 const CAL_MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-const CALX={y:0,m:0,sel:new Set(),color:CAL_COL[0],edit:null,anchor:null,acts:[],pa:'',pb:'',vista:'m'};
+const CALX={y:0,m:0,sel:new Set(),color:CAL_COL[0],edit:null,anchor:null,acts:[],pa:'',pb:'',vista:'m',ex:new Set()};
 let calDrag=null, calLast=null;
 const calCk=()=>prKey(BRX.cant);
 const calFg=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return (r*.299+g*.587+b*.114)>150?'#1c1c1e':'#ffffff';};
@@ -3031,7 +3032,7 @@ function calRender(){
   calPerInit();calBind();
   const has=!!BRX.cant;
   pe('cal-msg').style.display=has?'none':'block';
-  calGrid();calGantt();calPal();calLeg();calProg();calSelUI();calEditBar();calVistaUI();calMatUI();
+  calGrid();calGantt();calPal();calLeg();calProg();calExUI();calSelUI();calEditBar();calVistaUI();calMatUI();
 }
 function calGrid(){
   calPerInit();
@@ -3097,6 +3098,7 @@ function calDaysTxt(days){
 }
 // valori effettivi di una voce (giorno+attività): se non impostati sulla voce valgono quelli della vecchia legenda
 function calEff(i){const m=calMetaOf(calAk(i));return{op:i.op!==undefined?i.op:(m.op||''),h:i.h!==undefined?i.h:(m.h||''),n:i.n!==undefined?i.n:(m.n||'')};}
+const calXd=d=>CALX.ex&&CALX.ex.has(d);
 function calDayItems(d,by){return (by[d]||[]).slice().sort((x,y)=>calOrd(calAk(x))-calOrd(calAk(y))||((x.s||x.u)-(y.s||y.u))||(x.id<y.id?-1:1));}
 function calProg(){
   const el=pe('cal-prog');if(!el)return;
@@ -3112,6 +3114,16 @@ function calProg(){
   if(!body){el.innerHTML=h+`<div class="pr-alert info">Nessuna attività nel periodo. Seleziona i giorni sul calendario, scrivi l'attività con operatori e ore e premi Applica: il programma compare qui.</div>`;return;}
   el.innerHTML=h+`<div class="card" style="padding:0 4px">${body}</div>`;
 }
+function calExUI(){
+  const el=pe('cal-ex');if(!el)return;
+  const [a,b]=calPer(),by=calByDay(),ds=[];
+  for(let d=a;d<=b;d=brAdd(d,1)){if((by[d]||[]).some(i=>!calHid(calAk(i))))ds.push(d);}
+  if(!ds.length){el.innerHTML='';return;}
+  const n=ds.filter(d=>!calXd(d)).length;
+  el.innerHTML=`<div style="font-size:13px;font-weight:600;margin:12px 0 6px">Giorni da esportare <span style="font-weight:400;color:var(--label2)">(${n} di ${ds.length})</span> <button class="br-x" style="color:var(--blue)" onclick="calExAll(true)">Tutti</button><button class="br-x" style="color:var(--blue)" onclick="calExAll(false)">Nessuno</button></div><div style="display:flex;flex-wrap:wrap;gap:6px">`+ds.map(d=>`<button class="rep-btn${calXd(d)?'':' active'}" style="padding:7px 10px;font-size:14px;min-width:0" aria-pressed="${!calXd(d)}" onclick="calExTog('${d}')">${d.slice(8)}/${d.slice(5,7)}</button>`).join('')+`</div><div style="font-size:12px;color:var(--label2);margin-top:6px">Vale per PDF, Condividi, Email e WhatsApp (elenco, calendario e Gantt).</div>`;
+}
+function calExTog(d){if(CALX.ex.has(d))CALX.ex.delete(d);else CALX.ex.add(d);calExUI();}
+function calExAll(on){const [a,b]=calPer();if(on)CALX.ex.clear();else for(let d=a;d<=b;d=brAdd(d,1))CALX.ex.add(d);calExUI();}
 function calItSet(id,f,v){
   const i=calData().it.find(x=>x.id===id);if(!i)return;
   i[f]=String(v).slice(0,f==='n'?160:20);i.u=Date.now();if(!i.s)i.s=i.u-1;prSave();
@@ -3130,6 +3142,7 @@ function calText(){
   let t=`PROGRAMMA LAVORI - ${BRX.cant}\nDal ${prFmtD(a)} al ${prFmtD(b)}\n`;
   const comp=gv('p-compilatore');if(comp)t+='Preparato da: '+comp+'\n';
   for(let d=a;d<=b;d=brAdd(d,1)){
+    if(calXd(d))continue;
     const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();
     if(!its.length&&!nt)continue;
     t+=`\n${calDM(d)}`;
@@ -3144,7 +3157,7 @@ function calText(){
 function calOk(){
   if(!BRX.cant){toast('Inserisci il cantiere');return false;}
   const [a,b]=calPer();
-  if(!calMineV().some(i=>i.d>=a&&i.d<=b)){toast('Il periodo non contiene attività');return false;}
+  if(!calMineV().some(i=>i.d>=a&&i.d<=b&&!calXd(i.d))){toast(calMineV().some(i=>i.d>=a&&i.d<=b)?'Nessun giorno selezionato da esportare':'Il periodo non contiene attività');return false;}
   return true;
 }
 const calPdfName=(a,tag)=>(a+'_Calendario-'+tag+'_'+BRX.cant.replace(/[^a-zA-Z0-9À-ÿ]/g,'-').replace(/-+/g,'-').slice(0,30)).replace(/[^a-zA-Z0-9À-ÿ_-]/g,'-').replace(/-+/g,'-')+'.pdf';
@@ -3176,7 +3189,7 @@ function calPdf(){
     for(let r=0;r<rows;r++){
       if(y+rh>BOT){np();y=18;head();}
       for(let c=0;c<7;c++){
-        const d=brAdd(first,r*7+c),x=MX+c*cw,out=!calInP(d);
+        const d=brAdd(first,r*7+c),x=MX+c*cw,out=!calInP(d)||calXd(d);
         if(out){doc.setFillColor(246,246,248);doc.rect(x,y,cw,rh,'F');}
         doc.setDrawColor(200,200,205);doc.setLineWidth(.2);doc.rect(x,y,cw,rh,'S');
         doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...(out?[175,175,180]:(c===6?[200,40,40]:[30,30,35])));
@@ -3194,7 +3207,7 @@ function calPdf(){
   };
   // ── Gantt del periodo
   const drawGantt=()=>{
-    const rows=calGanttRows(a,b),n=calDiff(a,b)+1,LW=land?58:46,cw=(CW-LW)/n,rh=7,X0=MX+LW;let idx=0;
+    const rows=calGanttRows(a,b,true),n=calDiff(a,b)+1,LW=land?58:46,cw=(CW-LW)/n,rh=7,X0=MX+LW;let idx=0;
     while(idx<rows.length){
       const room=Math.floor((BOT-y-13)/rh);
       if(room<2&&y>25){np();y=18;continue;}
@@ -3225,7 +3238,7 @@ function calPdf(){
   };
   // ── elenco per giorno: DATA | ATTIVITA | OPER. | ORE | NOTE
   const drawList=(sub)=>{
-    const days=[];for(let d=a;d<=b;d=brAdd(d,1)){const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();if(its.length||nt)days.push({d,its,nt});}
+    const days=[];for(let d=a;d<=b;d=brAdd(d,1)){if(calXd(d))continue;const its=calDayItems(d,by),nt=((C.nt[ck+'|'+d]||{}).t||'').trim();if(its.length||nt)days.push({d,its,nt});}
     const eff=new Map();days.forEach(x=>x.its.forEach(i=>eff.set(i.id,calEff(i))));
     const hasM=[...eff.values()].some(e=>e.op||e.h),hasN=[...eff.values()].some(e=>e.n);
     const wD=26,wO=hasM?17:0,wH=hasM?15:0,wN=hasN?Math.round(CW*(land?.3:.27)):0,wA=CW-wD-wO-wH-wN;
@@ -3272,7 +3285,7 @@ function calPdf(){
   uploadPdfToDrive(blob,fn);
   return true;
 }
-function calSig(){const [a,b]=calPer();return [gv('cal-pm'),gv('cal-po'),pe('cal-pmat')&&pe('cal-pmat').checked,BRX.cant,a,b].join('|')+JSON.stringify(calMineV().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calData().ac)+JSON.stringify(calData().nt)+JSON.stringify(calMat(a,b));}
+function calSig(){const [a,b]=calPer();return [gv('cal-pm'),gv('cal-po'),pe('cal-pmat')&&pe('cal-pmat').checked,BRX.cant,a,b,[...CALX.ex].sort().join(',')].join('|')+JSON.stringify(calMineV().filter(i=>i.d>=a&&i.d<=b))+JSON.stringify(calData().ac)+JSON.stringify(calData().nt)+JSON.stringify(calMat(a,b));}
 function calMail(){
   if(!calOk())return;
   const em=brSelected().map(c=>c.email).filter(Boolean);
@@ -3495,9 +3508,9 @@ async function calShare(){
 }
 function calWa(){if(!calOk())return;window.open('https://wa.me/?text='+encodeURIComponent(calText()),'_blank','noopener,noreferrer');}
 // ── GANTT dal calendario + materiali/attrezzature dai briefing ────────────────
-function calGanttRows(a,b){
+function calGanttRows(a,b,x){
   const m=new Map();
-  calMineV().forEach(i=>{if(i.d<a||i.d>b)return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
+  calMineV().forEach(i=>{if(i.d<a||i.d>b||(x&&calXd(i.d)))return;const k=calAk(i),e=m.get(k)||{t:i.t,c:i.c,days:[]};e.days.push(i.d);m.set(k,e);});
   return [...m.values()].map(e=>{e.days.sort();e.runs=[];let s=e.days[0],p=s;
     for(let n=1;n<=e.days.length;n++){const d=e.days[n];if(d&&d===brAdd(p,1)){p=d;continue;}e.runs.push([s,p]);s=d;p=d;}
     return e;}).sort((x,y)=>(calFin(calAk(x))-calFin(calAk(y)))||(x.days[0]<y.days[0]?-1:x.days[0]>y.days[0]?1:x.t.localeCompare(y.t)));
